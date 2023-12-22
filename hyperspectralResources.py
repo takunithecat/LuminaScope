@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 import tifffile as tiff
+import matplotlib.pyplot as plt
 
 # This is an sample program for performing hyperspectral analysis using the LuminaScope system.
 # This software is distributed under the Apache 2.0 License.
@@ -41,7 +42,7 @@ cv.imshow('Autumn', img)
 
 # Isolate blue, green. red image
 # Resulting grayscale images show concentration/intensity of r,b,g values
-# b,g,r = cv.split(img)
+b,g,r = cv.split(img)
 
 # cv.imshow('Blue', b)
 # cv.imshow('Green', g)
@@ -62,7 +63,31 @@ cv.imshow('Autumn', img)
 # cv.imshow('Red', red)
 
 # Calculate histogram of color? levels
+# histSize = num of bins
 
+# Single color histogram
+# blue_hist = cv.calcHist([b], [0], None, [256], [0, 256])
+
+# plt.figure()
+# plt.title('Blue Histogram')
+# plt.xlabel('Bins')
+# plt.ylabel('Num Pixels')
+# plt.plot(blue_hist)
+# plt.xlim([0, 256])
+# plt.show()
+
+# Multicolor histogram
+# plt.figure()
+# plt.title('Multichannel Histogram')
+# plt.xlabel('Bins')
+# plt.ylabel('Num Pixels')
+# colors = ('b', 'g', 'r')
+# for i, col in enumerate(colors):
+#     hist = cv.calcHist([img], [i], None, [256], [0,256])
+#     plt.plot(hist, color = col)
+#     plt.xlim([0, 256])
+
+# plt.show()
 
 # Crop image by indexing pixel ranges
 # cropped = img[50:200, 200:400]
@@ -70,20 +95,26 @@ cv.imshow('Autumn', img)
 
 # Smooth image can be done by many techniques
 # Average blur, higher number is more blurring
-average = cv.blur(img, (3,3))
-cv.imshow('Average Blur', average)
+# average = cv.blur(img, (3,3))
+# cv.imshow('Average Blur', average)
 
 # Gaussian blur
 # More natural compared to averaging, less blurred, due to weights on averaging
-gauss = cv.GaussianBlur(img, (3,3), 0)
-cv.imshow('Gaussian Blur', gauss)
+# gauss = cv.GaussianBlur(img, (3,3), 0)
+# cv.imshow('Gaussian Blur', gauss)
 
 # Median blur
+# Might be better at removing noise in comparison to other blurs
+# median = cv.medianBlur(img, 3)
+# cv.imshow('Median Blur', median)
+
+# Bilateral blur
+# Retains edges, spacesigma bigger means farther pixels are influenced
+# bilateral = cv.bilateralFilter(img, 5, 15, 15)
+# cv.imshow('Bilateral', bilateral)
 
 # Threshhold image
 
 # Calculate phasor with fast fourier transform
-
-# Hyperspectral analysis
 
 cv.waitKey(0)
