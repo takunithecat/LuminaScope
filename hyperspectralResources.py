@@ -114,6 +114,23 @@ b,g,r = cv.split(img)
 # cv.imshow('Bilateral', bilateral)
 
 # Threshhold image
+# Simple threshholding
+# Max value, if greater set to
+# Threshholding type, binary threshholding
+# thresh, image
+# threshhold, the value
+# threshhold, thresh = cv.threshold(b, 100, 255, cv.THRESH_BINARY)
+# cv.imshow('Simple Threshhold', thresh)
+
+# Inverted threshhold
+# threshhold, thresh = cv.threshold(b, 100, 255, cv.THRESH_BINARY)
+# cv.imshow('Simple Threshhold Inverse', thresh)
+
+# Adaptive threshhold, computer generated threshhold
+# block size: size needed to compute mean
+# c: integer subtracted from mean for optimization
+adaptive_thresh = cv.adaptiveThreshold(b, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 3)
+cv.imshow('Adaptive Threshholding', adaptive_thresh)
 
 # Calculate phasor with fast fourier transform
 
