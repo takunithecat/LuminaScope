@@ -1,6 +1,6 @@
-import numpy
-import cv2
-import tifffile
+import numpy as np
+import cv2 as cv
+import tifffile as tiff
 
 # This is an sample program for performing hyperspectral analysis using the LuminaScope system.
 # This software is distributed under the Apache 2.0 License.
@@ -8,6 +8,38 @@ import tifffile
 # They are numpy, opencv-python, and tifffile in that order.
 
 # Opening tiff file from file location
+# File location is variable and depends on folders
+img = cv.imread('autumn.tif')
+
+# Show image
+# syntax: Picture name, variable
+cv.imshow('Autumn', img)
+
+# Reading videos
+# capture = cv.VideoCapture('Videos/dog.mp4')
+# while True:
+#   isTrue, frame = capture.read()
+#   cv.imshow('Video', frame)
+#   if cv.waitkey(20) & 0xFF==ord('d')
+#       break
+# capture.relase()
+# cv.destroyAllWindows()
+
+# Rescaling images
+# Works on images, videos, and live video
+# def rescaleFrame(frame, scale=0.75):
+#     width = int(frame.shape[1] * scale)
+#     height = int(frame.shape[0] * scale)
+
+#     dimensions = (width, height)
+#     return cv.resize(frame, dimensions, interpolation=cv.INTER_AREA)
+
+# Changing live video resolution
+# def changeRes(width,height):
+#     capture.set(3, width)
+#     capture.set(4,height)
+
+# Contour Isolation
 
 # Isolate red image
 
@@ -17,10 +49,16 @@ import tifffile
 
 # Calculate histogram of color? levels
 
-# Crop image
+# Crop image by indexing pixel ranges
+cropped = img[50:200, 200:400]
+cv.imshow('Cropped', cropped)
 
 # Smooth image
 
 # Threshhold image
 
+# Calculate phasor with fast fourier transform
+
 # Hyperspectral analysis
+
+cv.waitKey(0)
