@@ -65,10 +65,20 @@ cv.imshow('Autumn', img)
 
 
 # Crop image by indexing pixel ranges
-cropped = img[50:200, 200:400]
-cv.imshow('Cropped', cropped)
+# cropped = img[50:200, 200:400]
+# cv.imshow('Cropped', cropped)
 
-# Smooth image
+# Smooth image can be done by many techniques
+# Average blur, higher number is more blurring
+average = cv.blur(img, (3,3))
+cv.imshow('Average Blur', average)
+
+# Gaussian blur
+# More natural compared to averaging, less blurred, due to weights on averaging
+gauss = cv.GaussianBlur(img, (3,3), 0)
+cv.imshow('Gaussian Blur', gauss)
+
+# Median blur
 
 # Threshhold image
 
