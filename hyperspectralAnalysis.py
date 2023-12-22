@@ -39,15 +39,16 @@ cv.imshow('Autumn', img)
 #     capture.set(3, width)
 #     capture.set(4,height)
 
-# Contour Isolation
+# Isolate blue, green. red image
+# resulting images show concentration/intensity of r,b,g values
+b,g,r = cv.split(img)
 
-# Isolate red image
-
-# Isolate blue image
-
-# Isolate green image
+cv.imshow('Blue', b)
+cv.imshow('Green', g)
+cv.imshow('Red', r)
 
 # Calculate histogram of color? levels
+
 
 # Crop image by indexing pixel ranges
 cropped = img[50:200, 200:400]
