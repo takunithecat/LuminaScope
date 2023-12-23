@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 # Opening tiff file from file location
 # File location is variable and depends on folders
-img = cv.imread('autumn.tif')
+img = cv.imread('Images/autumn.tif')
 
 # Show image
 # syntax: Picture name, variable
@@ -63,7 +63,7 @@ b,g,r = cv.split(img)
 # cv.imshow('Red', red)
 
 # Calculate histogram of color? levels
-# histSize = num of bins
+# histSize is num of bins
 
 # Single color histogram
 # blue_hist = cv.calcHist([b], [0], None, [256], [0, 256])
