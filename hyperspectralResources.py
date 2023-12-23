@@ -148,8 +148,8 @@ b,g,r = cv.split(img)
 # cv.imshow('Combined Sobel', sobelmix)
 
 # Canny edges
-canny = cv.Canny(b, 150, 175)
-cv.imshow('Canny', canny)
+# canny = cv.Canny(b, 150, 175)
+# cv.imshow('Canny', canny)
 # Calculate phasor with fast fourier transform
 
 cv.waitKey(0)
