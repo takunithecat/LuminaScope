@@ -129,9 +129,27 @@ b,g,r = cv.split(img)
 # Adaptive threshhold, computer generated threshhold
 # block size: size needed to compute mean
 # c: integer subtracted from mean for optimization
-adaptive_thresh = cv.adaptiveThreshold(b, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 3)
-cv.imshow('Adaptive Threshholding', adaptive_thresh)
+# adaptive_thresh = cv.adaptiveThreshold(b, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 3)
+# cv.imshow('Adaptive Threshholding', adaptive_thresh)
 
+# Edge detection
+# Laplacian
+# lap = cv.Laplacian(b, cv.CV_64F)
+# lap = np. uint8(np.absolute(lap))
+# cv.imshow('Laplacian', lap)
+
+# Sobel
+# sobelx = cv.Sobel(b, cv.CV_64F, 1, 0)
+# sobely = cv.Sobel(b, cv.CV_64F, 0, 1)
+# sobelmix = cv.bitwise_or(sobelx, sobely)
+
+# cv.imshow('Sobel X', sobelx)
+# cv.imshow('Sobel Y', sobely)
+# cv.imshow('Combined Sobel', sobelmix)
+
+# Canny edges
+canny = cv.Canny(b, 150, 175)
+cv.imshow('Canny', canny)
 # Calculate phasor with fast fourier transform
 
 cv.waitKey(0)
