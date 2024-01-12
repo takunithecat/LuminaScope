@@ -152,4 +152,42 @@ b,g,r = cv.split(img)
 # cv.imshow('Canny', canny)
 # Calculate phasor with fast fourier transform
 
+def main(Gsmt):
+    fft=np.fft.fft(Gsmt, axis=2)
+   
+    G=fft[:,:,1].real/fft[:,:,0].real
+    G=np.nan_to_num(G, nan=0.0)
+    # plt.figure()
+    # plt.imshow(G)
+    # # plt.axis('off')
+    # plt.title('G')
+    # plt.colorbar()
+   
+    S=fft[:,:,1].imag/fft[:,:,0].real
+    S=np.nan_to_num(S, nan=0.0)
+    # plt.figure()
+    # plt.imshow(S)
+    # # plt.axis('off')
+    # plt.title('S')
+    # plt.colorbar()
+   
+    Ph=np.arctan2(S[:,:], G[:,:])+np.pi
+    Ph=np.nan_to_num(Ph, nan=0.0)
+    # plt.figure()
+    # plt.imshow(Ph)
+    # # plt.axis('off')
+    # plt.title('Phase')
+    # plt.colorbar()
+   
+    Mod=np.sqrt(G**2+S**2)
+    Mod=np.nan_to_num(Mod, nan=0.0)
+    # plt.figure()
+    # plt.imshow(Mod)
+    # # plt.axis('off')
+    # plt.title('Mod')
+    # plt.colorbar()
+   
+   
+    return G, S, Ph, Mod
+
 cv.waitKey(0)
