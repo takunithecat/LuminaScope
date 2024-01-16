@@ -25,8 +25,11 @@ class Image():
         self.high = high
 
     # phasor function calculate values
-    def phasor(self):
-        fft=np.fft.fft(self.img, axis=2)
+    def calculate_phasors(self, img=None):
+        if img is None:
+            img = self.img
+
+        fft=np.fft.fft(img, axis=2)
     
         G=fft[:,:,1].real/fft[:,:,0].real
         G=np.nan_to_num(G, nan=0.0)
@@ -44,7 +47,7 @@ class Image():
         self.S = S
         self.Ph = Ph
         self.Mod = Mod
-    
+
     # plots each value separately
     def plot_phasors(self):
         plt.figure()
@@ -74,18 +77,18 @@ class Image():
         plt.show()
     
     # define rescaling function
-    def rescaleFrame(self, scale=0.5):
+    def rescale_frame(self, scale=0.5):
         width = int(self.img.shape[1] * scale)
         height = int(self.img.shape[0] * scale)
 
         dimensions = (width, height)
         return cv.resize(self.img, dimensions, interpolation=cv.INTER_AREA)
     
-    def setmask(self):
+    def set_mask(self):
         # Using inRange method, to create a mask
         self.mask = cv.inRange(self.img, self.low, self.high)
 
-    def setisolate(self):
+    def set_isolate(self):
         self.isolate = cv.bitwise_and(self.img, self.img, mask=self.mask)
 
 def main():
@@ -97,7 +100,7 @@ def main():
     img = Image(img)
 
     # rescale image down so it's not covering the whole screen
-    rescaled = img.rescaleFrame(0.25)
+    rescaled = img.rescale_frame(0.25)
 
     # cropping step was manual to determine location
     cropped = rescaled[130:700, 90:500]
@@ -131,42 +134,42 @@ def main():
     violet400 = Image(img_hsv, low=np.array([130,0,0]), high=np.array([160,150,150]))
 
     # masks
-    red650.setmask()
-    red625.setmask()
-    red610.setmask()
-    yellow600.setmask()
-    yellow580.setmask()
-    yellow575.setmask()
-    green550.setmask()
-    green540.setmask()
-    green525.setmask()
-    green500.setmask()
-    blue475.setmask()
-    blue450.setmask()
-    blue440.setmask()
-    blue430.setmask()
-    blue420.setmask()
-    violet410.setmask()
-    violet400.setmask()
+    red650.set_mask()
+    red625.set_mask()
+    red610.set_mask()
+    yellow600.set_mask()
+    yellow580.set_mask()
+    yellow575.set_mask()
+    green550.set_mask()
+    green540.set_mask()
+    green525.set_mask()
+    green500.set_mask()
+    blue475.set_mask()
+    blue450.set_mask()
+    blue440.set_mask()
+    blue430.set_mask()
+    blue420.set_mask()
+    violet410.set_mask()
+    violet400.set_mask()
 
     # set isolates
-    red650.setisolate()
-    red625.setisolate()
-    red610.setisolate()
-    yellow600.setisolate()
-    yellow580.setisolate()
-    yellow575.setisolate()
-    green550.setisolate()
-    green540.setisolate()
-    green525.setisolate()
-    green500.setisolate()
-    blue475.setisolate()
-    blue450.setisolate()
-    blue440.setisolate()
-    blue430.setisolate()
-    blue420.setisolate()
-    violet410.setisolate()
-    violet400.setisolate()
+    red650.set_isolate()
+    red625.set_isolate()
+    red610.set_isolate()
+    yellow600.set_isolate()
+    yellow580.set_isolate()
+    yellow575.set_isolate()
+    green550.set_isolate()
+    green540.set_isolate()
+    green525.set_isolate()
+    green500.set_isolate()
+    blue475.set_isolate()
+    blue450.set_isolate()
+    blue440.set_isolate()
+    blue430.set_isolate()
+    blue420.set_isolate()
+    violet410.set_isolate()
+    violet400.set_isolate()
 
     # Show image
     # cv.imshow('red625isolate', violet400.isolate)
@@ -175,6 +178,38 @@ def main():
     # cv.imshow('Gaussian', gauss)
 
     # Calculate phasors and plot
+    red650.calculate_phasors(red650.isolate)
+    # red650.plot_phasors()
+    red625.calculate_phasors(red625.isolate)
+    # red625.plot_phasors()
+    red610.calculate_phasors(red610.isolate)
+    # red610.plot_phasors()
+    yellow600.calculate_phasors(yellow600.isolate)
+    # yellow600.plot_phasors()
+    yellow580.calculate_phasors(yellow580.isolate)
+    # yellow580.plot_phasors()
+    yellow575.calculate_phasors(yellow575.isolate)
+    # yellow575.plot_phasors()
+    green550.calculate_phasors(green550.isolate)
+    # green550.plot_phasors()
+    green540.calculate_phasors(green540.isolate)
+    # green540.plot_phasors()
+    green525.calculate_phasors(green525.isolate)
+    # green525.plot_phasors()
+    green500.calculate_phasors(green500.isolate)
+    # green500.plot_phasors()
+    blue450.calculate_phasors(blue450.isolate)
+    # blue450.plot_phasors()
+    blue440.calculate_phasors(blue440.isolate)
+    # blue440.plot_phasors()
+    blue430.calculate_phasors(blue430.isolate)
+    # blue430.plot_phasors()
+    blue420.calculate_phasors(blue420.isolate)
+    # blue420.plot_phasors()
+    violet410.calculate_phasors(violet410.isolate)
+    # violet410.plot_phasors()
+    violet400.calculate_phasors(violet400.isolate)
+    violet400.plot_phasors()
 
     cv.waitKey(0)
 
