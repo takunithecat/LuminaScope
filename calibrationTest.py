@@ -203,13 +203,13 @@ def main():
     blue440.calculate_phasors(blue440.isolate)
     # blue440.plot_phasors()
     blue430.calculate_phasors(blue430.isolate)
-    # blue430.plot_phasors()
+    blue430.plot_phasors()
     blue420.calculate_phasors(blue420.isolate)
     # blue420.plot_phasors()
     violet410.calculate_phasors(violet410.isolate)
     # violet410.plot_phasors()
     violet400.calculate_phasors(violet400.isolate)
-    violet400.plot_phasors()
+    #violet400.plot_phasors()
 
     cv.waitKey(0)
 
