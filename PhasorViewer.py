@@ -22,3 +22,6 @@ file_list_column = [
         )
     ],
 ]
+
+if __name__ == '__main__':
+    main()
