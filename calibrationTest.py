@@ -11,7 +11,7 @@ import os
 # - and plot the mean  G and mean S coordinates of every box in a phasor plot
 
 # assign directory
-directory = 'Images'
+directory = 'TestImages'
 
 # define rescaling function
 def rescaleFrame(frame, scale=0.5):
@@ -60,7 +60,7 @@ def phasor(Gsmt):
    
     return G, S, Ph, Mod
 
-img = cv.imread('Images/image0.jpg')
+img = cv.imread('TestImages/image0.jpg')
 
 rescaled = rescaleFrame(img, 0.25)
 
