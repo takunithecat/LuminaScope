@@ -8,19 +8,86 @@ import PySimpleGUI as sg
 
 # GUI wrapper for viewing phasors
 
-# First the window layout in 2 columns
-
-file_list_column = [
-    [
-        sg.Text("Image Folder"),
-        sg.In(size=(25, 1), enable_events=True, key="-FOLDER-"),
-        sg.FolderBrowse(),
-    ],
-    [
-        sg.Listbox(
-            values=[], enable_events=True, size=(40, 20), key="-FILE LIST-"
+lowSliders = [
+    [   
+        # Hue Slider
+        sg.Slider(
+            (0,179),
+            90,
+            1,
+            orientation='horizontal',
+            size=(60,15),
+            key="-LO HUE SLIDER"      
         )
     ],
+    [
+        # Low Sat slider
+        sg.Slider(
+            (0,255),
+            90,
+            1,
+            orientation='horizontal',
+            size=(60,15),
+            key="-LO SAT SLIDER" 
+        )
+    ],
+    [
+        # Low Value Slider
+        sg.Slider(
+            (0,255),
+            90,
+            1,
+            orientation='horizontal',
+            size=(60,15),
+            key="-LO LUM SLIDER" 
+        )
+    ]
+]
+
+highSliders = [
+    [
+        # High Hue slider
+        sg.Slider(
+            (0,179),
+            90,
+            1,
+            orientation='horizontal',
+            size=(60,15),
+            key="-LO HUE SLIDER"      
+        )
+    ],
+    [
+        # High Sat slider
+        sg.Slider(
+            (0,255),
+            90,
+            1,
+            orientation='horizontal',
+            size=(60,15),
+            key="-LO SAT SLIDER" 
+        )
+    ],
+    [
+        # High Value Slider
+        sg.Slider(
+            (0,255),
+            90,
+            1,
+            orientation='horizontal',
+            size=(60,15),
+            key="-LO LUM SLIDER" 
+        )
+    ]
+]
+
+layout = [
+    [
+        # Image viewer
+    ],
+    [   sg.Column(lowSliders),
+        sg.VSeperator(),
+        sg.Column(highSliders)
+    ]
 ]
 
 if __name__ == '__main__':
