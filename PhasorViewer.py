@@ -132,6 +132,7 @@ class Image():
 # GUI wrapper for viewing phasors
 
 file_types = [("JPEG (*.jpg)", "*.jpg"),
+              ("TIFF (*.tif)", "*.tif"),
               ("All files (*.*)", "*.*")]
 
 def main():
