@@ -217,9 +217,9 @@ def main():
     blurSlider = [
         [
             # Blur Slider
-            sg.Radio("Blur", "Radio", size=(10, 1), key="-BLUR-"),
+            sg.Checkbox("Blur", size=(10, 1), key="-BLUR-"),
             sg.Slider(
-                (3,7),
+                (3,13),
                 3,
                 2,
                 orientation='horizontal',
@@ -259,8 +259,9 @@ def main():
 
     filename = ''
 
+    # Blur and HSV does not work at the same time
     while True:
-        if filename != '':
+        if filename != '' :
             frame = cv.imread(filename=filename)
 
         event, values = window.read(timeout=20)
