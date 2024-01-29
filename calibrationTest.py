@@ -96,7 +96,7 @@ def main():
     directory = 'Images'
 
     # init image into class
-    img = cv.imread('Images/image0.jpg')
+    img = cv.imread('TestImages/image0.jpg')
     img = Image(img)
 
     # rescale image down so it's not covering the whole screen
