@@ -262,7 +262,7 @@ def main():
 
     # Blur and HSV does not work at the same time
     while True:
-        if filename != '' :
+        if filename != '':
             frame = cv.imread(filename=filename)
 
         event, values = window.read(timeout=20)
@@ -274,33 +274,25 @@ def main():
 
         if values["-BLUR-"]:
             try:
-                if HSV_flag is True:
-                    frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
-                else:
-                    frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-                    frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
-                    HSV_flag = True
+                frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+                HSV_flag = True
+
+                frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
             except UnboundLocalError:
                 print('ERROR: Frame not defined prior to blur manipulation')
 
         if values["-HSV-"]:
             try:
-                if HSV_flag is True:
-                    image_frame = Image(frame, 
-                                    low=np.array([values["-LO HUE SLIDER-"], values["-LO SAT SLIDER-"], values["-LO VAL SLIDER-"]]),
-                                    high=np.array([values["-HI HUE SLIDER-"], values["-HI SAT SLIDER-"], values["-HI VAL SLIDER-"]]))
-                    image_frame.set_mask()
-                    image_frame.set_isolate()
-                    frame = image_frame.get_isolate()
-                else:
+                if HSV_flag is False:
                     frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-                    image_frame = Image(frame, 
-                                    low=np.array([values["-LO HUE SLIDER-"], values["-LO SAT SLIDER-"], values["-LO VAL SLIDER-"]]),
-                                    high=np.array([values["-HI HUE SLIDER-"], values["-HI SAT SLIDER-"], values["-HI VAL SLIDER-"]]))
-                    image_frame.set_mask()
-                    image_frame.set_isolate()
-                    frame = image_frame.get_isolate()
                     HSV_flag = True
+
+                image_frame = Image(frame, 
+                                low=np.array([values["-LO HUE SLIDER-"], values["-LO SAT SLIDER-"], values["-LO VAL SLIDER-"]]),
+                                high=np.array([values["-HI HUE SLIDER-"], values["-HI SAT SLIDER-"], values["-HI VAL SLIDER-"]]))
+                image_frame.set_mask()
+                image_frame.set_isolate()
+                frame = image_frame.get_isolate()
                 
             except UnboundLocalError:
                 print('ERROR: Frame not defined prior to HSV manipulation')
