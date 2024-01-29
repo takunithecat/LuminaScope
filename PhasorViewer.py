@@ -299,6 +299,7 @@ def main():
                 pass
 
         if event == "Generate Phasor Plots":
+            plt.close('all')
             phasor_frame = Image(frame)
             phasor_frame.calculate_phasors()
             phasor_frame.plot_phasors()
