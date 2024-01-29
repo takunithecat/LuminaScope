@@ -234,7 +234,8 @@ def main():
             sg.Text("Image File"),
             sg.Input(size=(25, 1), enable_events=True, key="-FILE-"),
             sg.FileBrowse(file_types=file_types),
-            sg.Button("Load Image")
+            sg.Button("Load Image"),
+            sg.Button("Generate Phasor Plots")
         ]
     ]
 
@@ -279,7 +280,7 @@ def main():
 
                 frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
             except UnboundLocalError:
-                print('ERROR: Frame not defined prior to blur manipulation')
+                pass
 
         if values["-HSV-"]:
             try:
@@ -295,7 +296,12 @@ def main():
                 frame = image_frame.get_isolate()
                 
             except UnboundLocalError:
-                print('ERROR: Frame not defined prior to HSV manipulation')
+                pass
+
+        if event == "Generate Phasor Plots":
+            phasor_frame = Image(frame)
+            phasor_frame.calculate_phasors()
+            phasor_frame.plot_phasors()
 
         if filename != '':
             try:
@@ -305,7 +311,7 @@ def main():
                 imgbytes = np.array(imencode).tobytes()
                 window["-IMAGE-"].update(data=imgbytes)
             except UnboundLocalError:
-                print("ERROR: Something wrong while viewing")
+                pass
 
     window.close()
 
