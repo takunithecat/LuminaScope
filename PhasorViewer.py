@@ -26,6 +26,7 @@ class Image():
             img = self.img
 
         fft=np.fft.fft(img, axis=2)
+        print(fft)
     
         G=fft[:,:,1].real/fft[:,:,0].real
         G=np.nan_to_num(G, nan=0.0)
@@ -234,7 +235,8 @@ def main():
             sg.Text("Image File"),
             sg.Input(size=(25, 1), enable_events=True, key="-FILE-"),
             sg.FileBrowse(file_types=file_types),
-            sg.Button("Load Image")
+            sg.Button("Load Image"),
+            sg.Button("Generate Phasor Plots")
         ]
     ]
 
@@ -261,7 +263,7 @@ def main():
     HSV_flag = False
 
     while True:
-        if filename != '' :
+        if filename != '':
             frame = cv.imread(filename=filename)
 
         event, values = window.read(timeout=20)
@@ -273,36 +275,37 @@ def main():
 
         if values["-BLUR-"]:
             try:
-                if HSV_flag is True:
-                    frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
-                else:
-                    frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-                    frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
-                    HSV_flag = True
+                frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+                HSV_flag = True
+
+                frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
             except UnboundLocalError:
-                print('ERROR: Frame not defined prior to blur manipulation')
+                pass
 
         if values["-HSV-"]:
             try:
-                if HSV_flag is True:
-                    image_frame = Image(frame, 
-                                    low=np.array([values["-LO HUE SLIDER-"], values["-LO SAT SLIDER-"], values["-LO VAL SLIDER-"]]),
-                                    high=np.array([values["-HI HUE SLIDER-"], values["-HI SAT SLIDER-"], values["-HI VAL SLIDER-"]]))
-                    image_frame.set_mask()
-                    image_frame.set_isolate()
-                    frame = image_frame.get_isolate()
-                else:
+                if HSV_flag is False:
                     frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-                    image_frame = Image(frame, 
-                                    low=np.array([values["-LO HUE SLIDER-"], values["-LO SAT SLIDER-"], values["-LO VAL SLIDER-"]]),
-                                    high=np.array([values["-HI HUE SLIDER-"], values["-HI SAT SLIDER-"], values["-HI VAL SLIDER-"]]))
-                    image_frame.set_mask()
-                    image_frame.set_isolate()
-                    frame = image_frame.get_isolate()
                     HSV_flag = True
+
+                image_frame = Image(frame, 
+                                low=np.array([values["-LO HUE SLIDER-"], values["-LO SAT SLIDER-"], values["-LO VAL SLIDER-"]]),
+                                high=np.array([values["-HI HUE SLIDER-"], values["-HI SAT SLIDER-"], values["-HI VAL SLIDER-"]]))
+                image_frame.set_mask()
+                image_frame.set_isolate()
+                frame = image_frame.get_isolate()
                 
             except UnboundLocalError:
-                print('ERROR: Frame not defined prior to HSV manipulation')
+                pass
+
+        if event == "Generate Phasor Plots":
+            plt.close('all')
+            try:
+                phasor_frame = Image(frame)
+                phasor_frame.calculate_phasors(phasor_frame.isolate)
+                phasor_frame.plot_phasors()
+            except Exception:
+                pass
 
         if filename != '':
             try:
@@ -312,7 +315,7 @@ def main():
                 imgbytes = np.array(imencode).tobytes()
                 window["-IMAGE-"].update(data=imgbytes)
             except UnboundLocalError:
-                print("ERROR: Something wrong while viewing")
+                pass
 
     window.close()
 
