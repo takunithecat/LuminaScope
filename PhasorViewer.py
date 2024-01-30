@@ -260,7 +260,6 @@ def main():
     filename = ''
     HSV_flag = False
 
-    # Blur and HSV does not work at the same time
     while True:
         if filename != '' :
             frame = cv.imread(filename=filename)
