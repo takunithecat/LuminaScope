@@ -92,7 +92,7 @@ class Image():
         rescaled_height = int(height * (700 / larger_dimension))
 
         dimensions = (rescaled_width, rescaled_height)
-        return cv.resize(self.img, dimensions, interpolation=cv.INTER_AREA)
+        return cv.resize(self.img, dimensions, interpolation=cv.INTER_AREA), rescaled_width, rescaled_height
 
     # Setters
     def set_mask(self):
@@ -140,7 +140,7 @@ def main():
     lowSliders = [
         [   
             # Hue Slider
-            sg.Radio("Hue", "Radio", size=(10, 1), key="-HSV-"),
+            sg.Checkbox("Hue", "Radio", size=(10, 1), key="-HSV-"),
             sg.Slider(
                 (0,179),
                 90,
@@ -152,7 +152,7 @@ def main():
         ],
         [
             # Low Sat slider
-            sg.Radio("Sat", "Radio", size=(10, 1), key="-HSV-"),
+            sg.Checkbox("Sat", "Radio2", size=(10, 1), key="-HSV-"),
             sg.Slider(
                 (0,255),
                 90,
@@ -164,7 +164,7 @@ def main():
         ],
         [
             # Low Value Slider
-            sg.Radio("Val", "Radio", size=(10, 1), key="-HSV-"),
+            sg.Checkbox("Val", "Radio3", size=(10, 1), key="-HSV-"),
             sg.Slider(
                 (0,255),
                 90,
@@ -179,7 +179,7 @@ def main():
     highSliders = [
         [
             # High Hue slider
-            sg.Radio("Hue", "Radio", size=(10, 1), key="-HSV-"),
+            sg.Checkbox("Hue", "Radio4", size=(10, 1), key="-HSV-"),
             sg.Slider(
                 (0,179),
                 179,
@@ -191,7 +191,7 @@ def main():
         ],
         [
             # High Sat slider
-            sg.Radio("Sat", "Radio", size=(10, 1), key="-HSV-"),
+            sg.Checkbox("Sat", "Radio5", size=(10, 1), key="-HSV-"),
             sg.Slider(
                 (0,255),
                 255,
@@ -203,7 +203,7 @@ def main():
         ],
         [
             # High Value Slider
-            sg.Radio("Val", "Radio", size=(10, 1), key="-HSV-"),
+            sg.Checkbox("Val", "Radio6", size=(10, 1), key="-HSV-"),
             sg.Slider(
                 (0,255),
                 255,
@@ -235,16 +235,27 @@ def main():
             sg.Text("Image File"),
             sg.Input(size=(25, 1), enable_events=True, key="-FILE-"),
             sg.FileBrowse(file_types=file_types),
-            sg.Button("Load Image"),
+            sg.Button("Load/Refresh Image"),
             sg.Button("Generate Phasor Plots")
         ]
     ]
+    graph_settings = sg.Graph(
+                canvas_size=(0,0),
+                graph_bottom_left=(0, 0),
+                graph_top_right=(700, 700),
+                key="-GRAPH-",
+                enable_events=True,
+                background_color='lightblue',
+                drag_submits=True,
+                motion_events=True,
+            )
 
     layout = [
         [
             # Image viewer
-            sg.Image(key="-IMAGE-")
+            graph_settings,
         ],
+        [sg.Text(key='-INFO-', size=(60, 1))],
         [
             sg.Column(file_list_column)
         ],
@@ -257,12 +268,15 @@ def main():
         ]
     ]
 
-    window = sg.Window("Phasor Viewer", layout, location=(800, 400))
+    window = sg.Window("Phasor Viewer", layout)
 
     filename = ''
     HSV_flag = False
 
-    # Blur and HSV does not work at the same time
+    graph = window["-GRAPH-"]       # type: sg.Graph
+    dragging = False
+    start_point = end_point = prior_rect = former_start = former_end = None
+
     while True:
         if filename != '':
             frame = cv.imread(filename=filename)
@@ -271,9 +285,6 @@ def main():
         if event == "Exit" or event == sg.WIN_CLOSED:
             break
         
-        if event == "Load Image":
-            filename = values["-FILE-"]
-
         if values["-BLUR-"]:
             try:
                 frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
@@ -282,6 +293,8 @@ def main():
                 frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
             except UnboundLocalError:
                 pass
+        else:
+            HSV_flag = False
 
         if values["-HSV-"]:
             try:
@@ -296,8 +309,11 @@ def main():
                 image_frame.set_isolate()
                 frame = image_frame.get_isolate()
                 
-            except UnboundLocalError:
+            except (UnboundLocalError, cv.error):
                 pass
+                
+            except (UnboundLocalError, AttributeError, TypeError) as error:
+                print(error)
 
         if event == "Generate Phasor Plots":
             plt.close('all')
@@ -308,14 +324,29 @@ def main():
             except Exception:
                 pass
 
-        if filename != '':
+        if event == "Load/Refresh Image":
             try:
-                show_frame = Image(frame)
-                show_frame = show_frame.rescale_fixed()
-                imencode = cv.imencode(".png", show_frame)[1]
-                imgbytes = np.array(imencode).tobytes()
-                window["-IMAGE-"].update(data=imgbytes)
-            except UnboundLocalError:
+                if filename == '':
+                    filename = values["-FILE-"]
+                    frame = cv.imread(filename=filename)
+
+                    show_frame = Image(frame)
+                    show_frame, width, height = show_frame.rescale_fixed()
+                    graph_settings.set_size((width, height))
+                    imencode = cv.imencode(".png", show_frame)[1]
+                    imgbytes = np.array(imencode).tobytes()
+                    back = graph.draw_image(data=imgbytes, location=(0,700))
+
+                else:
+                    graph.delete_figure(back)
+                    show_frame = Image(frame)
+                    show_frame, width, height = show_frame.rescale_fixed()
+                    graph_settings.set_size((width, height))
+                    imencode = cv.imencode(".png", show_frame)[1]
+                    imgbytes = np.array(imencode).tobytes()
+                    back = graph.draw_image(data=imgbytes, location=(0,700))
+                    graph.send_figure_to_back(back)
+            except (UnboundLocalError, AttributeError):
                 pass
 
     window.close()
