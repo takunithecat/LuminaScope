@@ -317,7 +317,7 @@ def main():
                 imencode = cv.imencode(".png", show_frame)[1]
                 imgbytes = np.array(imencode).tobytes()
                 back = graph.draw_image(data=imgbytes, location=(0,700))
-            except UnboundLocalError:
+            except (UnboundLocalError, AttributeError):
                 pass
         
         if values["-BLUR-"]:
@@ -326,7 +326,7 @@ def main():
                 HSV_flag = True
 
                 frame = cv.medianBlur(frame, int(values["-BLUR SLIDER-"]))
-            except UnboundLocalError:
+            except (UnboundLocalError, cv.error):
                 pass
         else:
             HSV_flag = False
@@ -371,7 +371,7 @@ def main():
                     rectangle = cv.rectangle(blank, top_left, bot_right, 255, -1)
                     frame = cv.bitwise_and(frame, frame, mask=rectangle)
             except (UnboundLocalError, TypeError) as error:
-                print(error)
+                pass
 
         if event == "Generate Phasor Plots":
             plt.close('all')
