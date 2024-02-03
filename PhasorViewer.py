@@ -92,7 +92,7 @@ class Image():
         rescaled_height = int(height * (700 / larger_dimension))
 
         dimensions = (rescaled_width, rescaled_height)
-        return cv.resize(self.img, dimensions, interpolation=cv.INTER_AREA), rescaled_width, rescaled_height
+        return cv.resize(self.img, dimensions, interpolation=cv.INTER_AREA), rescaled_width, rescaled_height, larger_dimension
 
     # Setters
     def set_mask(self):
@@ -129,6 +129,12 @@ class Image():
     
     def get_high(self):
         return self.high
+
+# calculate top left and bottom right corners given any two corners
+def calculate_corners(corner1, corner2):
+    top_left = (min(corner1[0],corner2[0]), max(corner1[1],corner2[1]))
+    bot_right = (max(corner1[0],corner2[0]), min(corner1[1],corner2[1]))
+    return top_left, bot_right
 
 # GUI wrapper for viewing phasors
 
@@ -230,12 +236,20 @@ def main():
         ]
     ]
 
+    draw_col = [
+            [sg.Checkbox("Apply Mask", size=(10, 1), key="-MASK-")],
+            [sg.Radio('Draw Rectangle', 'Mask Options', 1, key='-RECT-', enable_events=True)],
+            [sg.Radio('Move Rectangle', 'Mask Options', 0, key='-MOVE-', enable_events=True)],
+            [sg.Radio('Erase Rectangle', 'Mask Options', 0, key='-ERASE-', enable_events=True)],
+        ]
+
     file_list_column = [
         [
             sg.Text("Image File"),
             sg.Input(size=(25, 1), enable_events=True, key="-FILE-"),
             sg.FileBrowse(file_types=file_types),
-            sg.Button("Load/Refresh Image"),
+            sg.Button("Load Image"),
+            sg.Button("Apply Settings"),
             sg.Button("Generate Phasor Plots")
         ]
     ]
@@ -254,6 +268,7 @@ def main():
         [
             # Image viewer
             graph_settings,
+            sg.Frame("Mask Options", draw_col)
         ],
         [sg.Text(key='-INFO-', size=(60, 1))],
         [
@@ -284,6 +299,26 @@ def main():
         event, values = window.read(timeout=20)
         if event == "Exit" or event == sg.WIN_CLOSED:
             break
+
+        if event == "Load Image":
+            # if you load image twice in a row then it doesnt work - fixed with if statement
+            # this one need to resize the thing also - fixed with change coordinates
+            try:
+                if 'back' in locals():
+                    graph.delete_figure(back)
+                
+                filename = values["-FILE-"]
+                frame = cv.imread(filename=filename)
+
+                show_frame = Image(frame)
+                show_frame, width, height, larger_dim = show_frame.rescale_fixed()
+                graph_settings.set_size((width, height))
+                graph_settings.change_coordinates((0,0), (width, height))
+                imencode = cv.imencode(".png", show_frame)[1]
+                imgbytes = np.array(imencode).tobytes()
+                back = graph.draw_image(data=imgbytes, location=(0,700))
+            except UnboundLocalError:
+                pass
         
         if values["-BLUR-"]:
             try:
@@ -315,6 +350,31 @@ def main():
             except (UnboundLocalError, AttributeError, TypeError) as error:
                 print(error)
 
+        if values["-MASK-"]:
+            try:
+                if 'former_start' in locals():
+                    top_left, bot_right = calculate_corners(former_start, former_end)
+
+                    # since the rectangle is drawn on the small one we have to recalculate the big one to put the mask
+                    # for some reason the x coordinate is always correct but the height/width are wrong
+                    # first convert to opencv coordinates from sg coordinates and then resize
+                    # for opencv, (0,0) is top left and (x,x) is bottom right
+                    # for pysimple gui, (0,0) is bottom left and (x,x) is top right
+                    # to convert y would be 700 - y
+                    # don't need to convert x?
+                    # - fixed
+                    top_left = tuple((top_left[0], (700 - top_left[1])))
+                    bot_right = tuple((bot_right[0], (700 - bot_right[1])))
+                    print(top_left)
+                    print(bot_right)
+                    top_left = tuple((int(top_left[0] * (larger_dim / 700)), int(top_left[1]  * (larger_dim / 700))))
+                    bot_right = tuple((int(bot_right[0] * (larger_dim / 700)), int(bot_right[1] * (larger_dim / 700))))
+                    blank = np.zeros(frame.shape[:2], dtype='uint8')
+                    rectangle = cv.rectangle(blank, top_left, bot_right, 255, -1)
+                    frame = cv.bitwise_and(frame, frame, mask=rectangle)
+            except (UnboundLocalError, TypeError) as error:
+                print(error)
+
         if event == "Generate Phasor Plots":
             plt.close('all')
             try:
@@ -324,30 +384,73 @@ def main():
             except Exception:
                 pass
 
-        if event == "Load/Refresh Image":
+        if event == "Apply Settings":
             try:
-                if filename == '':
-                    filename = values["-FILE-"]
-                    frame = cv.imread(filename=filename)
-
-                    show_frame = Image(frame)
-                    show_frame, width, height = show_frame.rescale_fixed()
-                    graph_settings.set_size((width, height))
-                    imencode = cv.imencode(".png", show_frame)[1]
-                    imgbytes = np.array(imencode).tobytes()
-                    back = graph.draw_image(data=imgbytes, location=(0,700))
-
-                else:
-                    graph.delete_figure(back)
-                    show_frame = Image(frame)
-                    show_frame, width, height = show_frame.rescale_fixed()
-                    graph_settings.set_size((width, height))
-                    imencode = cv.imencode(".png", show_frame)[1]
-                    imgbytes = np.array(imencode).tobytes()
-                    back = graph.draw_image(data=imgbytes, location=(0,700))
-                    graph.send_figure_to_back(back)
+                graph.delete_figure(back)
+                show_frame = Image(frame)
+                show_frame, width, height, larger_dim = show_frame.rescale_fixed()
+                graph_settings.set_size((width, height))
+                graph_settings.change_coordinates((0,0), (width, height))
+                imencode = cv.imencode(".png", show_frame)[1]
+                imgbytes = np.array(imencode).tobytes()
+                back = graph.draw_image(data=imgbytes, location=(0,700))
+                graph.send_figure_to_back(back)
             except (UnboundLocalError, AttributeError):
                 pass
+            # the graph size is getting resized but the top left and right arent gettign resized - fixed with change coordinates
+
+        if event in ('-MOVE-', '-MOVEALL-'):
+            graph.set_cursor(cursor='fleur')          # not yet released method... coming soon!
+        elif not event.startswith('-GRAPH-'):
+            graph.set_cursor(cursor='left_ptr')       # not yet released method... coming soon!
+        if event.endswith('+MOVE'):
+            window["-INFO-"].update(value=f"mouse {values['-GRAPH-']}")
+
+        if event == "-GRAPH-":  # if there's a "Graph" event, then it's a mouse
+            x, y = values["-GRAPH-"]
+            if not dragging:
+                start_point = (x, y)
+                dragging = True
+                lastxy = x, y
+            else:
+                end_point = (x, y)
+            if prior_rect:
+                graph.delete_figure(prior_rect)
+            delta_x, delta_y = x - lastxy[0], y - lastxy[1]
+            lastxy = x,y
+            if None not in (start_point, end_point):
+                # move only moves one rectangle
+                if values['-MOVE-']:
+                    if 'old_rect' in locals():
+                        graph.move_figure(old_rect, delta_x, delta_y)
+                        graph.update()
+                    else:
+                        pass
+                # only one rectangle should be possible to exist
+                elif values['-RECT-']:
+                    if 'old_rect' in locals():
+                        graph.delete_figure(old_rect)
+                    prior_rect = graph.draw_rectangle(start_point, end_point, line_color='red')
+                # erase should only erase one rectange
+                elif values['-ERASE-']:
+                    if 'old_rect' in locals():
+                        graph.delete_figure(old_rect)
+                    else:
+                        pass
+
+            window["-INFO-"].update(value=f"mouse {values['-GRAPH-']}")
+        elif event.endswith('+UP'):         # The drawing has ended because mouse up
+            window["-INFO-"].update(value=f"grabbed rectangle from {start_point} to {end_point}")
+            former_start, former_end = start_point, end_point
+            start_point, end_point = None, None  # enable grabbing a new rect
+            dragging = False
+            if prior_rect is not None:
+                old_rect = prior_rect
+            prior_rect = None
+        # elif event.endswith('+RIGHT+'):     # Right click
+        #     window["-INFO-"].update(value=f"Right clicked location {values['-GRAPH-']}")
+        # elif event.endswith('+MOTION+'):    # Right click
+        #     window["-INFO-"].update(value=f"mouse freely moving {values['-GRAPH-']}")
 
     window.close()
 
