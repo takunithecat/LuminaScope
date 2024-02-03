@@ -365,8 +365,6 @@ def main():
                     # - fixed
                     top_left = tuple((top_left[0], (700 - top_left[1])))
                     bot_right = tuple((bot_right[0], (700 - bot_right[1])))
-                    print(top_left)
-                    print(bot_right)
                     top_left = tuple((int(top_left[0] * (larger_dim / 700)), int(top_left[1]  * (larger_dim / 700))))
                     bot_right = tuple((int(bot_right[0] * (larger_dim / 700)), int(bot_right[1] * (larger_dim / 700))))
                     blank = np.zeros(frame.shape[:2], dtype='uint8')
