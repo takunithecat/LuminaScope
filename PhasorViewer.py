@@ -26,7 +26,6 @@ class Image():
             img = self.img
 
         fft=np.fft.fft(img, axis=2)
-        print(fft)
     
         G=fft[:,:,1].real/fft[:,:,0].real
         G=np.nan_to_num(G, nan=0.0)
@@ -376,7 +375,7 @@ def main():
         if event == "Generate Phasor Plots":
             plt.close('all')
             try:
-                phasor_frame = Image(frame)
+                phasor_frame = Image(cv.cvtColor(frame, cv.COLOR_HSV2BGR))
                 phasor_frame.calculate_phasors(phasor_frame.isolate)
                 phasor_frame.plot_phasors()
             except Exception:
