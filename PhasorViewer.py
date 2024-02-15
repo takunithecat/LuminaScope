@@ -260,9 +260,10 @@ def main():
     window = sg.Window("Phasor Viewer", layout, location=(800, 400))
 
     filename = ''
-    HSV_flag = False
+    
 
     while True:
+        HSV_flag = False
         if filename != '':
             frame = cv.imread(filename=filename)
 
