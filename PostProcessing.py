@@ -24,8 +24,16 @@ from PIL import Image
 # further increasing the number of iterations does not produce any improvement in the background image.
 # If K is lower, more niters needed, plateau at 500 niters
 # If K is higher, less niters are needed but still reach optimum performance in the 200-300 range.
+def rescaleFrame(frame, scale=0.5):
+    width = int(frame.shape[1] * scale)
+    height = int(frame.shape[0] * scale)
+
+    dimensions = (width, height)
+    return cv.resize(frame, dimensions, interpolation=cv.INTER_AREA)
 
 src = cv.imread('TestImages/microbeads.png')
+src = rescaleFrame(src)
+
 dest = cv.ximgproc.anisotropicDiffusion(src, alpha=0.1, K=10, niters=300)
 res = cv.subtract(src, dest)
 cv.imshow('source', src)
