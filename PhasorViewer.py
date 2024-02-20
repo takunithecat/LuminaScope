@@ -285,13 +285,14 @@ def main():
     window = sg.Window("Phasor Viewer", layout)
 
     filename = ''
-    HSV_flag = False
+    
 
     graph = window["-GRAPH-"]       # type: sg.Graph
     dragging = False
     start_point = end_point = prior_rect = former_start = former_end = None
 
     while True:
+        HSV_flag = False
         if filename != '':
             frame = cv.imread(filename=filename)
 
