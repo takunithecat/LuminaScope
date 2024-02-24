@@ -151,7 +151,7 @@ def main():
                 90,
                 1,
                 orientation='horizontal',
-                size=(60,15),
+                size=(30,15),
                 key="-LO HUE SLIDER-"      
             )
         ],
@@ -163,7 +163,7 @@ def main():
                 90,
                 1,
                 orientation='horizontal',
-                size=(60,15),
+                size=(30,15),
                 key="-LO SAT SLIDER-" 
             )
         ],
@@ -175,7 +175,7 @@ def main():
                 90,
                 1,
                 orientation='horizontal',
-                size=(60,15),
+                size=(30,15),
                 key="-LO VAL SLIDER-" 
             )
         ]
@@ -190,7 +190,7 @@ def main():
                 179,
                 1,
                 orientation='horizontal',
-                size=(60,15),
+                size=(30,15),
                 key="-HI HUE SLIDER-"      
             )
         ],
@@ -202,7 +202,7 @@ def main():
                 255,
                 1,
                 orientation='horizontal',
-                size=(60,15),
+                size=(30,15),
                 key="-HI SAT SLIDER-" 
             )
         ],
@@ -214,7 +214,7 @@ def main():
                 255,
                 1,
                 orientation='horizontal',
-                size=(60,15),
+                size=(30,15),
                 key="-HI VAL SLIDER-" 
             )
         ]
@@ -269,7 +269,8 @@ def main():
             graph_settings,
             sg.Frame("Mask Options", draw_col)
         ],
-        [sg.Text(key='-INFO-', size=(60, 1))],
+        [sg.Text(key='-INFO-', size=(60, 1))
+        ],
         [
             sg.Column(file_list_column)
         ],
