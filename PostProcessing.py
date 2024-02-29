@@ -31,7 +31,7 @@ def rescaleFrame(frame, scale=0.5):
     dimensions = (width, height)
     return cv.resize(frame, dimensions, interpolation=cv.INTER_AREA)
 
-src = cv.imread('TestImages/microbeads.png')
+src = cv.imread('TestImages/Concentration50_RGB.png')
 src = rescaleFrame(src)
 
 dest = cv.ximgproc.anisotropicDiffusion(src, alpha=0.1, K=10, niters=300)

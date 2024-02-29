@@ -1,0 +1,16 @@
+Fb/F0 = G
+Fg/F0 = S
+
+FB/F0 -> "G image"
+
+FG/F0 -> "S image"
+Labeling Scheme:
+"RGB": Full color settings
+"Greyscale - F0": Greyscale settings with no filter
+"Grayscale - FB": Greyscale settings with a filter that's colored blue
+"Grayscale - FG": Greyscale settings with a filter that's colored green
+
+Sum of the rgb channels
+
+Plot phasor mask so just one color set 3 set 2 10x maybe try segmentation
+watershed segmentation
