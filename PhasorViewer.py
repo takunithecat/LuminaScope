@@ -139,6 +139,7 @@ def calculate_corners(corner1, corner2):
 
 file_types = [("JPEG (*.jpg)", "*.jpg"),
               ("TIFF (*.tif)", "*.tif"),
+              ("PNG (*.png)", "*.png"),
               ("All files (*.*)", "*.*")]
 
 def main():
