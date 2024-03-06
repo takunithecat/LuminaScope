@@ -29,6 +29,8 @@ class Image():
         if img is None:
             img = self.img
 
+        img = cv.cvtColor(img, cv.COLOR_HSV2BGR)
+
         fft=np.fft.fft(img, axis=2)
     
         G=fft[:,:,1].real/fft[:,:,0].real
@@ -75,7 +77,20 @@ class Image():
         plt.colorbar()
 
         plt.show()
-    
+
+    def plot_polar(self, Gval=None, Sval=None):
+        if Gval is None:
+            Gval = self.G.flatten()
+        if Sval is None:
+            Sval = self.S.flatten() * 180 / np.pi
+
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='polar')
+        c = ax.scatter(Sval, Gval, cmap='hsv', alpha=0.75)
+        plt.title('G vs S')
+        plt.show()
+        
+
     # define rescaling function
     def rescale_frame(self, scale=0.5):
         width = int(self.img.shape[1] * scale)
@@ -203,13 +218,13 @@ def main():
     blue440.calculate_phasors(blue440.isolate)
     # blue440.plot_phasors()
     blue430.calculate_phasors(blue430.isolate)
-    blue430.plot_phasors()
+    # blue430.plot_phasors()
     blue420.calculate_phasors(blue420.isolate)
     # blue420.plot_phasors()
     violet410.calculate_phasors(violet410.isolate)
     # violet410.plot_phasors()
     violet400.calculate_phasors(violet400.isolate)
-    #violet400.plot_phasors()
+    violet400.plot_polar()
 
     cv.waitKey(0)
 

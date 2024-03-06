@@ -71,7 +71,20 @@ class MyImage():
         plt.colorbar()
 
         plt.show()
-    
+
+    # plots g and s as polar
+    def plot_polar(self, Gval=None, Sval=None):
+        if Gval is None:
+            Gval = self.G.flatten()
+        if Sval is None:
+            Sval = self.S.flatten() * 180 / np.pi
+
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='polar')
+        c = ax.scatter(Sval, Gval, cmap='hsv', alpha=0.75)
+        plt.title('G vs S')
+        plt.show()
+        
     # define rescaling function
     def rescale_frame(self, scale=0.5):
         width = int(self.img.shape[1] * scale)
@@ -382,6 +395,7 @@ def main():
                 phasor_frame = MyImage(cv.cvtColor(frame, cv.COLOR_HSV2BGR))
                 phasor_frame.calculate_phasors(phasor_frame.isolate)
                 phasor_frame.plot_phasors()
+                phasor_frame.plot_polar()
             except Exception:
                 pass
 
