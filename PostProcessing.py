@@ -45,6 +45,8 @@ src = rescaleFrame(src)
 
 shifted = cv.pyrMeanShiftFiltering(src, 21, 51)
 
+# Segmentation
+
 gray = cv.cvtColor(shifted, cv.COLOR_BGR2GRAY)
 thresh = cv.threshold(gray, 0, 255,
 	cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
@@ -82,5 +84,3 @@ for label in np.unique(labels):
 	
 cv.imshow("Output", src)
 cv.waitKey(0)
-
-# Segmentation
