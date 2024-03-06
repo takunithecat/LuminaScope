@@ -8,7 +8,7 @@ import PySimpleGUI as sg
 from PIL import Image
 
 # Image class from object based processing
-class Image():
+class MyImage():
     def __init__(self, img, low=None, high=None):
         self.img = img
         self.isolate = None
@@ -249,7 +249,8 @@ def main():
             sg.FileBrowse(file_types=file_types),
             sg.Button("Load Image"),
             sg.Button("Apply Settings"),
-            sg.Button("Generate Phasor Plots")
+            sg.Button("Generate Phasor Plots"),
+            sg.Button('Save Image', key='-SAVE-')
         ]
     ]
     graph_settings = sg.Graph(
@@ -311,7 +312,7 @@ def main():
                 filename = values["-FILE-"]
                 frame = cv.imread(filename=filename)
 
-                show_frame = Image(frame)
+                show_frame = MyImage(frame)
                 show_frame, width, height, larger_dim = show_frame.rescale_fixed()
                 graph_settings.set_size((width, height))
                 graph_settings.change_coordinates((0,0), (width, height))
@@ -338,7 +339,7 @@ def main():
                     frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
                     HSV_flag = True
 
-                image_frame = Image(frame, 
+                image_frame = MyImage(frame, 
                                 low=np.array([values["-LO HUE SLIDER-"], values["-LO SAT SLIDER-"], values["-LO VAL SLIDER-"]]),
                                 high=np.array([values["-HI HUE SLIDER-"], values["-HI SAT SLIDER-"], values["-HI VAL SLIDER-"]]))
                 image_frame.set_mask()
@@ -377,7 +378,7 @@ def main():
         if event == "Generate Phasor Plots":
             plt.close('all')
             try:
-                phasor_frame = Image(cv.cvtColor(frame, cv.COLOR_HSV2BGR))
+                phasor_frame = MyImage(cv.cvtColor(frame, cv.COLOR_HSV2BGR))
                 phasor_frame.calculate_phasors(phasor_frame.isolate)
                 phasor_frame.plot_phasors()
             except Exception:
@@ -386,8 +387,9 @@ def main():
         if event == "Apply Settings":
             try:
                 graph.delete_figure(back)
-                show_frame = Image(frame)
+                show_frame = MyImage(frame)
                 show_frame, width, height, larger_dim = show_frame.rescale_fixed()
+                show_frame = cv.cvtColor(show_frame, cv.COLOR_HSV2BGR)
                 graph_settings.set_size((width, height))
                 graph_settings.change_coordinates((0,0), (width, height))
                 imencode = cv.imencode(".png", show_frame)[1]
@@ -397,6 +399,19 @@ def main():
             except (UnboundLocalError, AttributeError):
                 pass
             # the graph size is getting resized but the top left and right arent gettign resized - fixed with change coordinates
+
+        elif event == '-SAVE-':
+            try:
+                save_frame = cv.cvtColor(frame, cv.COLOR_HSV2BGR)
+                # filename = sg.popup_get_file('Choose file (PNG, JPG, GIF) to save to', save_as=True)
+                filename = sg.popup_get_file('Click Save As and choose file name (include extension)', save_as=True)
+                dirs = filename.rsplit('/', 1)
+                dir = dirs[0]
+                name = dirs[1]
+                os.chdir(dir) 
+                cv.imwrite(name, save_frame) 
+            except (ValueError, UnboundLocalError, AttributeError, IndexError):
+                print("Unknown File Extension")
 
         if event in ('-MOVE-', '-MOVEALL-'):
             graph.set_cursor(cursor='fleur')          # not yet released method... coming soon!

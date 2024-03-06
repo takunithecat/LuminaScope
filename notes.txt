@@ -4,6 +4,7 @@ Fg/F0 = S
 FB/F0 -> "G image"
 
 FG/F0 -> "S image"
+
 Labeling Scheme:
 "RGB": Full color settings
 "Greyscale - F0": Greyscale settings with no filter
