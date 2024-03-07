@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 import tifffile as tiff
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import os
 
 # calibration python script

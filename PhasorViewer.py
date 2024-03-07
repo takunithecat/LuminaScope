@@ -85,6 +85,7 @@ class MyImage():
         plt.title('G vs S')
         plt.show()
         
+
     # define rescaling function
     def rescale_frame(self, scale=0.5):
         width = int(self.img.shape[1] * scale)
