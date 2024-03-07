@@ -77,11 +77,10 @@ class MyImage():
         if Gval is None:
             Gval = self.G.flatten()
         if Sval is None:
-            Sval = self.S.flatten() * 180 / np.pi
+            Sval = self.S.flatten()
 
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='polar')
-        c = ax.scatter(Sval, Gval, cmap='hsv', alpha=0.75)
+        plt.figure()
+        plt.scatter(x = Gval, y = Sval)
         plt.title('G vs S')
         plt.show()
         
@@ -393,7 +392,7 @@ def main():
         if event == "Generate Phasor Plots":
             plt.close('all')
             try:
-                phasor_frame = MyImage(cv.cvtColor(frame, cv.COLOR_HSV2BGR))
+                phasor_frame = MyImage(cv.cvtColor(frame, cv.COLOR_HSV2RGB))
                 phasor_frame.calculate_phasors(phasor_frame.isolate)
                 phasor_frame.plot_phasors()
                 phasor_frame.plot_polar()
