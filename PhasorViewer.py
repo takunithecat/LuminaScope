@@ -6,6 +6,7 @@ import os
 import io
 import PySimpleGUI as sg
 from PIL import Image
+import seaborn as sns
 
 # Image class from object based processing
 class MyImage():
@@ -81,6 +82,7 @@ class MyImage():
 
         plt.figure()
         plt.scatter(x = Gval, y = Sval)
+        sns.histplot(x=Gval, y=Sval)
         plt.title('G vs S')
         plt.show()
         

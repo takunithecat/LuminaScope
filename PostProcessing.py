@@ -36,50 +36,50 @@ def rescaleFrame(frame, scale=0.5):
     dimensions = (width, height)
     return cv.resize(frame, dimensions, interpolation=cv.INTER_AREA)
 
-src = cv.imread('Microbeads\ggg.png')
+src = cv.imread('Microbeads\Set3-F0-RGB.png')
 src = rescaleFrame(src)
 
-# Background Subtraction
-# dest = cv.ximgproc.anisotropicDiffusion(src, alpha=0.1, K=10, niters=300)
-# src = cv.subtract(src, dest)
+#Background Subtraction
+dest = cv.ximgproc.anisotropicDiffusion(src, alpha=0.1, K=10, niters=300)
+src = cv.subtract(src, dest)
 
 shifted = cv.pyrMeanShiftFiltering(src, 21, 51)
 
 # Segmentation
 
-gray = cv.cvtColor(shifted, cv.COLOR_BGR2GRAY)
-thresh = cv.threshold(gray, 0, 255,
-	cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
+# gray = cv.cvtColor(shifted, cv.COLOR_BGR2GRAY)
+# thresh = cv.threshold(gray, 0, 255,
+# 	cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
 
-# compute the exact Euclidean distance from every binary
-# pixel to the nearest zero pixel, then find peaks in this
-# distance map
-D = ndimage.distance_transform_edt(thresh)
-localMax = peak_local_max(D, min_distance=20,
-	labels=thresh)
-peaks_mask = np.zeros_like(D, dtype=bool)
-peaks_mask[localMax] = True
+# # compute the exact Euclidean distance from every binary
+# # pixel to the nearest zero pixel, then find peaks in this
+# # distance map
+# D = ndimage.distance_transform_edt(thresh)
+# localMax = peak_local_max(D, min_distance=20,
+# 	labels=thresh)
+# peaks_mask = np.zeros_like(D, dtype=bool)
+# peaks_mask[localMax] = True
 
-markers = ndimage.label(peaks_mask, structure=np.ones((3, 3)))[0]
-labels = watershed(-D, markers, mask=thresh)
+# markers = ndimage.label(peaks_mask, structure=np.ones((3, 3)))[0]
+# labels = watershed(-D, markers, mask=thresh)
 
-for label in np.unique(labels):
-	# if the label is zero, we are examining the 'background'
-	# so simply ignore it
-	if label == 0:
-		continue
-	# otherwise, allocate memory for the label region and draw
-	# it on the mask
-	mask = np.zeros(gray.shape, dtype="uint8")
-	mask[labels == label] = 255
-	# detect contours in the mask and grab the largest one
-	cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
-		cv.CHAIN_APPROX_SIMPLE)
-	cnts = imutils.grab_contours(cnts)
-	c = max(cnts, key=cv.contourArea)
-	# draw a circle enclosing the object
-	((x, y), r) = cv.minEnclosingCircle(c)
-	cv.circle(src, (int(x), int(y)), int(r), (0, 255, 0), 2)
+# for label in np.unique(labels):
+# 	# if the label is zero, we are examining the 'background'
+# 	# so simply ignore it
+# 	if label == 0:
+# 		continue
+# 	# otherwise, allocate memory for the label region and draw
+# 	# it on the mask
+# 	mask = np.zeros(gray.shape, dtype="uint8")
+# 	mask[labels == label] = 255
+# 	# detect contours in the mask and grab the largest one
+# 	cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
+# 		cv.CHAIN_APPROX_SIMPLE)
+# 	cnts = imutils.grab_contours(cnts)
+# 	c = max(cnts, key=cv.contourArea)
+# 	# draw a circle enclosing the object
+# 	((x, y), r) = cv.minEnclosingCircle(c)
+# 	cv.circle(src, (int(x), int(y)), int(r), (0, 255, 0), 2)
 
 	
 cv.imshow("Output", src)
