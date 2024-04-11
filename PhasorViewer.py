@@ -81,7 +81,7 @@ class MyImage():
             Sval = self.S.flatten()
 
         plt.figure()
-        plt.scatter(x = Gval, y = Sval)
+        # plt.scatter(x = Gval, y = Sval)
         sns.histplot(x=Gval, y=Sval)
         plt.title('G vs S')
         plt.show()
