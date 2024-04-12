@@ -32,7 +32,7 @@ def main(Gsmt, axis):
 
 
 
-image=cv.imread('C:/Users/fpalomba/Downloads/Test_RGB_BME180.jpg')
+image=cv.imread('Microbeads/10x RGB Fluorescence Set 1 4-5-24.png')
 image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
 
 gray=np.sum(image, axis=2)
