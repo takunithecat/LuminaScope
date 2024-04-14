@@ -6,7 +6,6 @@ from skimage.segmentation import watershed
 from skimage.feature import peak_local_max
 from sklearn.cluster import KMeans
 import os
-import seaborn as sns
 
 class ObjectPhasor:
     def __init__(self, G, S):
@@ -149,21 +148,22 @@ def main():
 
     labels = kmeans.predict(dataset)
 
-    # Plot the data points and their cluster assignments
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
-    ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], kmeans.cluster_centers_[:, 2],
-            marker='x', color='red', s=100 , linewidths=3)
-    # Set light blue background 
-    ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
-    ax.set_title("K-means Clustering on Swiss Roll Dataset")
-    ax.set_xlabel("G Value")
-    ax.set_ylabel("S Value")
-    ax.set_zlabel("Object Number")
-    plt.show()
+    # # Plot the data points and their cluster assignments
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
+    # ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], kmeans.cluster_centers_[:, 2],
+    #         marker='x', color='red', s=100 , linewidths=3)
+    # # Set light blue background 
+    # ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    # ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    # ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
+    # ax.set_title("K-means Clustering on Swiss Roll Dataset")
+    # ax.set_xlabel("G Value")
+    # ax.set_ylabel("S Value")
+    # ax.set_zlabel("Object Number")
+    # plt.savefig('foo.png')
+
         
 if __name__ == '__main__':
     main()
