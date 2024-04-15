@@ -171,7 +171,7 @@ def main():
     ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
     ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
     ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
-    ax.set_title("K-means Clustering on Swiss Roll Dataset")
+    ax.set_title("K-means Clustering on Phasors")
     ax.set_xlabel("G Value")
     ax.set_ylabel("S Value")
     ax.set_zlabel("Object Number")
