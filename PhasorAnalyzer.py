@@ -5,11 +5,14 @@ import cv2 as cv
 from skimage.segmentation import watershed
 from skimage.feature import peak_local_max
 from sklearn.cluster import KMeans
+import seaborn as sns
+import pandas as pd
 import os
 
 class ObjectPhasor:
-    def __init__(self, G, S):
+    def __init__(self, G, S, img):
         # G and S are both arrays
+        self.img = img
         self.G = G
         self.S = S
 
@@ -85,14 +88,16 @@ def watershed_object(image):
 def test():
     phasor_list = []
 
-    image=cv.imread('Microbeads/10x RGB Fluorescence Set 1 4-5-24.png')
+    image=cv.imread('Microbeads/10x RGB Fluorescence Set 2 4-5-24.png')
+    image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
+    image = cv.medianBlur(image, 5)
     objects = watershed_object(image)
 
     for object in objects:
-                # G and S are 2D Arrays of shape (image dim, 3)
-                G, S, Ph, Mod, I = phasors(object, axis=2)
-                temp = ObjectPhasor(G, S)
-                phasor_list.append(temp)
+        # G and S are 2D Arrays of shape (image dim, 3)
+        G, S, Ph, Mod, I = phasors(object, axis=2)
+        temp = ObjectPhasor(G, S, object)
+        phasor_list.append(temp)
     
     for i in range(len(phasor_list)):
         plt.figure()
@@ -100,7 +105,10 @@ def test():
         print(phasor_list[i].get_g().flatten())
         sns.histplot(x=phasor_list[i].get_g().flatten(), y=phasor_list[i].get_s().flatten())
         plt.title('G vs S')
+        
         plt.show()
+        cv.imshow('image', phasor_list[i].img)
+        cv.waitKey(0)
 
 def main():
     directory = 'Microbeads'
@@ -116,14 +124,14 @@ def main():
         if os.path.isfile(f):
             image=cv.imread(filename=f)
             image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
-            image = cv.medianBlur(image, 3)
+            image = cv.medianBlur(image, 5)
 
             objects = watershed_object(image)
 
-            for object in objects:
+            for obj in objects:
                 # G and S are 2D Arrays of shape (image dim, 3)
-                G, S, Ph, Mod, I = phasors(object, axis=2)
-                temp = ObjectPhasor(G, S)
+                G, S, Ph, Mod, I = phasors(obj, axis=2)
+                temp = ObjectPhasor(G, S, obj)
                 phasor_list.append(temp)
             
     # Flatten all the X, Y, Z and make them into array shape (dim, 3)
@@ -141,28 +149,33 @@ def main():
         Y.extend(y)
         Z.extend(z)
 
-    dataset = np.column_stack((X,Y,Z))
+    df = pd.DataFrame({"X" : X,
+                       "Y" : Y,
+                       "Z" : Z})
+    
+    df = df[(df['X'] != 0) & (df['Y'] != 0)] 
+
+    dataset = df.to_numpy()
+    xy_sample = df[["X", "Y"]]
 
     kmeans = KMeans(n_clusters=2)
-    kmeans.fit(dataset)
+    kmeans.fit(xy_sample)
+    labels = kmeans.predict(xy_sample)
 
-    labels = kmeans.predict(dataset)
+    # Plot the data points and their cluster assignments
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
 
-    # # Plot the data points and their cluster assignments
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
-    # ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], kmeans.cluster_centers_[:, 2],
-    #         marker='x', color='red', s=100 , linewidths=3)
-    # # Set light blue background 
-    # ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    # ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    # ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
-    # ax.set_title("K-means Clustering on Swiss Roll Dataset")
-    # ax.set_xlabel("G Value")
-    # ax.set_ylabel("S Value")
-    # ax.set_zlabel("Object Number")
-    # plt.savefig('foo.png')
+    # Set light blue background 
+    ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
+    ax.set_title("K-means Clustering on Swiss Roll Dataset")
+    ax.set_xlabel("G Value")
+    ax.set_ylabel("S Value")
+    ax.set_zlabel("Object Number")
+    plt.show()
 
         
 if __name__ == '__main__':
