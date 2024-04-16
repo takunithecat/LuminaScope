@@ -4,7 +4,10 @@ from scipy import ndimage as ndi
 import cv2 as cv
 from skimage.segmentation import watershed
 from skimage.feature import peak_local_max
+import sklearn
 from sklearn.cluster import KMeans
+from collections import Counter
+from skimage.color import rgb2lab, deltaE_cie76
 import seaborn as sns
 import pandas as pd
 import os
@@ -47,7 +50,7 @@ def background_subtraction(src):
     src = cv.subtract(src, dest)
 
     shifted = cv.pyrMeanShiftFiltering(src, 21, 51)
-    return shifted
+    return shifted 
 
 def watershed_object(image):
     # perform watershed on image and return individual objects in a list
@@ -73,44 +76,22 @@ def watershed_object(image):
         mask[labels == label] = 255
 
         masked = cv.bitwise_and(image, image, mask=mask)
+
         list_masks.append(masked)
     
     return list_masks
 
+def RGB2HEX(color):
+    return "#{:02x}{:02x}{:02x}".format(int(color[0]), int(color[1]), int(color[2]))
 
-# Main loop
+# kmeans loop
 # For image in folder, watershed and extract images
 # For watershed image, calculate phasor transform, calculate average color? and save G S coordinate
 # For each set of G S coordinate, format into array and plot as 3D
 # Perform Kmeans clustering on set of G S coordinate with make dummies and tag
 # plot kmeans in 3d
 
-def test():
-    phasor_list = []
-
-    image=cv.imread('Microbeads/10x RGB Fluorescence Set 2 4-5-24.png')
-    image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
-    image = cv.medianBlur(image, 5)
-    objects = watershed_object(image)
-
-    for object in objects:
-        # G and S are 2D Arrays of shape (image dim, 3)
-        G, S, Ph, Mod, I = phasors(object, axis=2)
-        temp = ObjectPhasor(G, S, object)
-        phasor_list.append(temp)
-    
-    for i in range(len(phasor_list)):
-        plt.figure()
-        # plt.scatter(x = Gval, y = Sval)
-        print(phasor_list[i].get_g().flatten())
-        sns.histplot(x=phasor_list[i].get_g().flatten(), y=phasor_list[i].get_s().flatten())
-        plt.title('G vs S')
-        
-        plt.show()
-        cv.imshow('image', phasor_list[i].img)
-        cv.waitKey(0)
-
-def main():
+def kmeans_points():
     directory = 'Microbeads'
 
     # init list of object phasors
@@ -177,7 +158,94 @@ def main():
     ax.set_zlabel("Object Number")
     plt.show()
 
-        
+def kmeans_colors(img, n):
+    image = img
+    number_of_colors = n
+
+    modified_image = image.reshape(image.shape[0]*image.shape[1], 3)
+    clf = KMeans(n_clusters = number_of_colors)
+    labels = clf.fit_predict(modified_image)
+
+    counts = Counter(labels)
+
+    center_colors = clf.cluster_centers_
+    # We get ordered colors by iterating through the keys
+    ordered_colors = [center_colors[i] for i in counts.keys()]
+    hex_colors = [RGB2HEX(ordered_colors[i]) for i in counts.keys()]
+    rgb_colors = [ordered_colors[i] for i in counts.keys()]
+
+    plt.title('Colors Detection', fontsize=20)
+    plt.pie(counts.values(), labels = hex_colors, colors = hex_colors)
+    plt.show()
+    return hex_colors, rgb_colors
+
+def color_computing(rgb_colors):
+    DIFF = []
+    # init list of object phasors
+    phasor_list = []
+
+    directory = 'Microbeads'
+
+    # Iterate files in directory
+    for filename in os.listdir(directory):
+        f = os.path.join(directory, filename)
+
+        # checking if it is a file
+        if os.path.isfile(f):
+            image=cv.imread(filename=f)
+            image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
+            image = cv.medianBlur(image, 5)
+
+            objects = watershed_object(image)
+
+            for obj in objects:
+                # G and S are 2D Arrays of shape (image dim, 3)
+                G, S, Ph, Mod, I = phasors(obj, axis=2)
+                temp = ObjectPhasor(G, S, obj)
+                phasor_list.append(temp)
+    
+    for phasor_object in phasor_list:
+        DIFF_COLOR = []
+        for color in range(len(rgb_colors)):
+            # there is took much black space in the image that this apprach is broken
+            diff = np.abs(phasor_object.img - rgb_colors[color])
+            DIFF_COLOR.append(diff.mean())
+        DIFF.append(DIFF_COLOR)
+
+    return np.array(DIFF)
+
+# classification loop
+def main():
+    # read in our best quality image to get the color codes
+    image = cv.imread('Microbeads/10x RGB Fluorescence Set 4 4-5-24.png')
+    image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+
+    hex_colors, rgb_colors = kmeans_colors(img=image, n=3)
+
+    for i in range(len(rgb_colors)):
+        rgb_colors[i] = rgb_colors[i].astype(int)
+
+    results = color_computing(rgb_colors=rgb_colors)
+
+    cols = ['Particle Number'] + hex_colors
+    sorted_results = pd.DataFrame(columns=cols)
+    k=0
+
+    for r in results:
+        d = {'Particle Number': [int(k)]}
+        for c in range(len(hex_colors)):
+            d[hex_colors[c]] = r[c]*100/r.sum()
+
+        d = pd.DataFrame.from_dict(d)
+        d = d.drop_duplicates(hex_colors)
+        print(d)
+        sorted_results = pd.concat([sorted_results, d], ignore_index=True)
+        k=k+1
+
+    sorted_results['Particle Number'] = sorted_results['Particle Number'].astype(int)
+    
+    sorted_results.head()
+
 if __name__ == '__main__':
     main()
 
