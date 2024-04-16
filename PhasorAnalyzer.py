@@ -114,7 +114,13 @@ def kmeans_points():
                 G, S, Ph, Mod, I = phasors(obj, axis=2)
                 temp = ObjectPhasor(G, S, obj)
                 phasor_list.append(temp)
-            
+    
+    data = []
+    for i in range(len(phasor_list)):
+        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i]
+        data.append(temp)
+    export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum']) 
+
     # Flatten all the X, Y, Z and make them into array shape (dim, 3)
     X = []
     Y = []
@@ -130,6 +136,7 @@ def kmeans_points():
         Y.extend(y)
         Z.extend(z)
 
+
     df = pd.DataFrame({"X" : X,
                        "Y" : Y,
                        "Z" : Z})
@@ -143,20 +150,32 @@ def kmeans_points():
     kmeans.fit(xy_sample)
     labels = kmeans.predict(xy_sample)
 
-    # Plot the data points and their cluster assignments
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
+    df['Labels'] = labels
 
-    # Set light blue background 
-    ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
-    ax.set_title("K-means Clustering on Phasors")
-    ax.set_xlabel("G Value")
-    ax.set_ylabel("S Value")
-    ax.set_zlabel("Object Number")
-    plt.show()
+
+    df = (df.groupby('Z')['Labels'].value_counts()
+         .rename('counts').reset_index()
+         .drop_duplicates('Z'))
+
+    export_df = export_df.join(df, how='inner',lsuffix='ObjNum', rsuffix='Z')
+    export_df = export_df[['G', 'S', 'ObjNum', 'Labels']]
+    # # Plot the data points and their cluster assignments
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
+
+    # # Set light blue background 
+    # ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    # ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    # ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
+    # ax.set_title("K-means Clustering on Phasors")
+    # ax.set_xlabel("G Value")
+    # ax.set_ylabel("S Value")
+    # ax.set_zlabel("Object Number")
+    # plt.show()
+
+    return export_df
+
 
 def kmeans_colors(img, n):
     image = img
@@ -215,36 +234,12 @@ def color_computing(rgb_colors):
     return np.array(DIFF)
 
 # classification loop
+# this assume that the previous clustering based on g and s is correct
 def main():
-    # read in our best quality image to get the color codes
-    image = cv.imread('Microbeads/10x RGB Fluorescence Set 4 4-5-24.png')
-    image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+    df = kmeans_points()
+    # df g and s come in a list, if can split those into columns and create dummies, can random forest classify
+    print(df)
 
-    hex_colors, rgb_colors = kmeans_colors(img=image, n=3)
-
-    for i in range(len(rgb_colors)):
-        rgb_colors[i] = rgb_colors[i].astype(int)
-
-    results = color_computing(rgb_colors=rgb_colors)
-
-    cols = ['Particle Number'] + hex_colors
-    sorted_results = pd.DataFrame(columns=cols)
-    k=0
-
-    for r in results:
-        d = {'Particle Number': [int(k)]}
-        for c in range(len(hex_colors)):
-            d[hex_colors[c]] = r[c]*100/r.sum()
-
-        d = pd.DataFrame.from_dict(d)
-        d = d.drop_duplicates(hex_colors)
-        print(d)
-        sorted_results = pd.concat([sorted_results, d], ignore_index=True)
-        k=k+1
-
-    sorted_results['Particle Number'] = sorted_results['Particle Number'].astype(int)
-    
-    sorted_results.head()
 
 if __name__ == '__main__':
     main()
