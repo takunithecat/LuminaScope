@@ -176,7 +176,59 @@ def kmeans_points():
 
     return export_df
 
+def user_grouping():
+    directory = 'Microbeads'
 
+    # init list of object phasors
+    phasor_list = []
+
+    # Iterate files in directory
+    for filename in os.listdir(directory):
+        f = os.path.join(directory, filename)
+
+        # checking if it is a file
+        if os.path.isfile(f):
+            image=cv.imread(filename=f)
+            image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
+            image = cv.medianBlur(image, 5)
+
+            objects = watershed_object(image)
+
+            for obj in objects:
+                # G and S are 2D Arrays of shape (image dim, 3)
+                G, S, Ph, Mod, I = phasors(obj, axis=2)
+                temp = ObjectPhasor(G, S, obj)
+                phasor_list.append(temp)
+    
+    data = []
+    for i in range(len(phasor_list)):
+        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i]
+        data.append(temp)
+    export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum']) 
+
+    # Flatten all the X, Y, Z and make them into array shape (dim, 3)
+    X = []
+    Y = []
+    Z = []
+
+    for i in range(len(phasor_list)):
+        x = phasor_list[i].get_g().flatten()
+        y = phasor_list[i].get_s().flatten()
+        shape = x.shape
+        z = np.full(shape=shape, fill_value=i)
+
+        X.extend(x)
+        Y.extend(y)
+        Z.extend(z)
+
+
+    df = pd.DataFrame({"X" : X,
+                       "Y" : Y,
+                       "Z" : Z})
+    
+    df = df[(df['X'] != 0) & (df['Y'] != 0)] 
+    
+    return export_df
 def kmeans_colors(img, n):
     image = img
     number_of_colors = n
@@ -238,7 +290,28 @@ def color_computing(rgb_colors):
 def main():
     df = kmeans_points()
     # df g and s come in a list, if can split those into columns and create dummies, can random forest classify
-    print(df)
+
+    # df = df.apply(lambda x: x['G'].flatten(), axis=1)
+    # print(df['S'])
+    # for col in df.columns:
+    #     print(col)
+    # G_columns = len(df['G'][0])
+    # S_columns = len(df['S'][0])
+    # print(G_columns)
+    # print(S_columns)
+    # G_col = []
+    # S_col = []
+
+    # for i in range(G_columns):
+    #     G_col.append(f"G{i}")
+
+    # for i in range(S_columns):
+    #     S_col.append(f"S{i}")
+
+    # df[G_col] = pd.DataFrame(df.G.tolist(), index= df.index)
+    # df[S_col] = pd.DataFrame(df.S.tolist(), index= df.index)
+
+    # print(df)
 
 
 if __name__ == '__main__':
