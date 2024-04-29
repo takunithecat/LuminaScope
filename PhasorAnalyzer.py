@@ -229,6 +229,7 @@ def user_grouping():
     df = df[(df['X'] != 0) & (df['Y'] != 0)] 
     
     return export_df
+
 def kmeans_colors(img, n):
     image = img
     number_of_colors = n
