@@ -11,6 +11,7 @@ from skimage.color import rgb2lab, deltaE_cie76
 import seaborn as sns
 import pandas as pd
 import os
+import statistics
 
 class ObjectPhasor:
     def __init__(self, G, S, img):
@@ -199,35 +200,16 @@ def user_grouping():
                 G, S, Ph, Mod, I = phasors(obj, axis=2)
                 temp = ObjectPhasor(G, S, obj)
                 phasor_list.append(temp)
-    
+
     data = []
+    
     for i in range(len(phasor_list)):
         temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i]
         data.append(temp)
     export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum']) 
 
-    # Flatten all the X, Y, Z and make them into array shape (dim, 3)
-    X = []
-    Y = []
-    Z = []
-
-    for i in range(len(phasor_list)):
-        x = phasor_list[i].get_g().flatten()
-        y = phasor_list[i].get_s().flatten()
-        shape = x.shape
-        z = np.full(shape=shape, fill_value=i)
-
-        X.extend(x)
-        Y.extend(y)
-        Z.extend(z)
-
-
-    df = pd.DataFrame({"X" : X,
-                       "Y" : Y,
-                       "Z" : Z})
-    
-    df = df[(df['X'] != 0) & (df['Y'] != 0)] 
-    
+    export_df['Labels'] = export_df.apply(lambda x: 1 if statistics.median([i for i in x['S'].flatten() if i != 0]) <= -0.2 else 0, axis=1)
+        
     return export_df
 
 def kmeans_colors(img, n):
@@ -286,6 +268,21 @@ def color_computing(rgb_colors):
 
     return np.array(DIFF)
 
+def test_accuracy(kmeans_df, user_df):
+    kmeans_dict = kmeans_df['Labels'].to_dict()
+    user_dict = user_df['Labels'].to_dict()
+    accuracy = []
+    
+    for key in kmeans_dict:
+        if kmeans_dict[key] == user_dict[key]:
+            accuracy.append(1)
+        else:
+            accuracy.append(0)
+    
+    score = sum(accuracy) / len(kmeans_dict) * 100
+
+    return score
+    
 # classification loop
 # this assume that the previous clustering based on g and s is correct
 def main():
@@ -313,7 +310,6 @@ def main():
     # df[S_col] = pd.DataFrame(df.S.tolist(), index= df.index)
 
     # print(df)
-
 
 if __name__ == '__main__':
     main()
