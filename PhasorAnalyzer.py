@@ -12,6 +12,9 @@ import seaborn as sns
 import pandas as pd
 import os
 import statistics
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay
+from sklearn.model_selection import RandomizedSearchCV, train_test_split
 
 class ObjectPhasor:
     def __init__(self, G, S, img):
@@ -267,6 +270,47 @@ def color_computing(rgb_colors):
         DIFF.append(DIFF_COLOR)
 
     return np.array(DIFF)
+
+def classify_phasors(df):
+    # classify into color based on G and S arrays
+    df['G'] = df['G'].map(lambda x: x.flatten())
+    df['S'] = df['S'].map(lambda x: x.flatten())
+    
+    df['G'] = df['G'].map(lambda x: [i for i in x if i != 0])
+    df['S'] = df['S'].map(lambda x: [i for i in x if i != 0])
+
+    gmax = len(max(df.G, key=len))
+    smax = len(max(df.S, key=len))
+
+    df['G'] = df['G'].map(lambda x: np.pad(x, (0, (gmax - len(x)))))
+    df['S'] = df['S'].map(lambda x: np.pad(x, (0, (smax - len(x)))))
+
+    gcolnames = []
+    scolnames = []
+    for i in range(len(df['G'][0])):
+        temp = 'G' + f'{i}'
+        gcolnames.append(temp)
+    for i in range(len(df['S'][0])):
+        temp = 'S' + f'{i}'
+        scolnames.append(temp)
+
+    df[gcolnames] = pd.DataFrame(df.G.tolist(), index= df.index)
+    df[scolnames] = pd.DataFrame(df.S.tolist(), index= df.index)
+
+    X = df.drop(['Labels', 'G', 'S'], axis=1)
+    y = df['Labels']
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+
+    rf = RandomForestClassifier()
+    rf.fit(X_train, y_train)
+
+    y_pred = rf.predict(X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    print("Accuracy:", accuracy)
+
+    return y_pred
 
 def test_accuracy(kmeans_df, user_df):
     kmeans_dict = kmeans_df['Labels'].to_dict()
