@@ -12,9 +12,12 @@ import seaborn as sns
 import pandas as pd
 import os
 import statistics
+from sklearn.metrics import silhouette_score
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay
+from sklearn.model_selection import KFold
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay, classification_report, roc_curve, roc_auc_score 
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
+import random
 
 class ObjectPhasor:
     def __init__(self, G, S, img):
@@ -66,7 +69,6 @@ def watershed_object(image):
 
     distance = ndi.distance_transform_edt(Mgray)
     coords = peak_local_max(distance, min_distance=8)
-    print(len(coords))
     mask = np.zeros(distance.shape, dtype=bool)
     mask[tuple(coords.T)] = True
     markers, _ = ndi.label(mask)
@@ -78,8 +80,13 @@ def watershed_object(image):
             continue
         mask = np.zeros(Mgray.shape, dtype='uint8')
         mask[labels == label] = 255
-
+ 
         masked = cv.bitwise_and(image, image, mask=mask)
+
+        cv.imshow(f'Object #{label}', masked)
+        # waitKey() waits for a key press to close the window and 0 specifies indefinite loop
+        cv.waitKey(240)
+        cv.destroyAllWindows()
 
         list_masks.append(masked)
     
@@ -95,8 +102,8 @@ def RGB2HEX(color):
 # Perform Kmeans clustering on set of G S coordinate with make dummies and tag
 # plot kmeans in 3d
 
-def kmeans_points():
-    directory = 'Microbeads'
+def kmeans_points(dir):
+    directory = dir
 
     # init list of object phasors
     phasor_list = []
@@ -121,31 +128,23 @@ def kmeans_points():
     
     data = []
     for i in range(len(phasor_list)):
-        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i]
+        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i, phasor_list[i]]
         data.append(temp)
-    export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum']) 
+        
+    export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum', 'ObjRef'])
+
+    # Instead of having all the phasors as a list to plot, we combine to have just one point - the medians of G and S, which helps limit outliers
+    export_df['G'] = export_df.apply(lambda x: statistics.median([i for i in x['G'].flatten() if i != 0]), axis=1)
+    export_df['S'] = export_df.apply(lambda x: statistics.median([i for i in x['S'].flatten() if i != 0]), axis=1)
 
     # Flatten all the X, Y, Z and make them into array shape (dim, 3)
-    X = []
-    Y = []
-    Z = []
-
-    for i in range(len(phasor_list)):
-        x = phasor_list[i].get_g().flatten()
-        y = phasor_list[i].get_s().flatten()
-        shape = x.shape
-        z = np.full(shape=shape, fill_value=i)
-
-        X.extend(x)
-        Y.extend(y)
-        Z.extend(z)
-
+    X = export_df['G'].to_list()
+    Y = export_df['S'].to_list()
+    Z = export_df['ObjNum'].to_list()
 
     df = pd.DataFrame({"X" : X,
                        "Y" : Y,
                        "Z" : Z})
-    
-    df = df[(df['X'] != 0) & (df['Y'] != 0)] 
 
     dataset = df.to_numpy()
     xy_sample = df[["X", "Y"]]
@@ -153,67 +152,106 @@ def kmeans_points():
     kmeans = KMeans(n_clusters=2)
     kmeans.fit(xy_sample)
     labels = kmeans.predict(xy_sample)
-
+    
     df['Labels'] = labels
-
-
     df = (df.groupby('Z')['Labels'].value_counts()
          .rename('counts').reset_index()
          .drop_duplicates('Z'))
 
     export_df = export_df.join(df, how='inner',lsuffix='ObjNum', rsuffix='Z')
-    export_df = export_df[['G', 'S', 'ObjNum', 'Labels']]
-    # # Plot the data points and their cluster assignments
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
+    export_df = export_df[['G', 'S', 'ObjNum', 'Labels', 'ObjRef']]
 
-    # # Set light blue background 
-    # ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    # ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    # ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
-    # ax.set_title("K-means Clustering on Phasors")
-    # ax.set_xlabel("G Value")
-    # ax.set_ylabel("S Value")
-    # ax.set_zlabel("Object Number")
-    # plt.show()
+    # Plot the data points and their cluster assignments
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
+
+    # Set light blue background 
+    ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
+    ax.set_title("K-means Clustering on Phasors")
+    ax.set_xlabel("G Value")
+    ax.set_ylabel("S Value")
+    ax.set_zlabel("Object Number")
+    fig.show()
+
+    fig2 = plt.figure()
+    ax2 = fig.add_subplot(111)
+    ax2.scatter(dataset[:, 0], dataset[:, 1], c=labels, cmap='viridis')
+    # Set light blue background 
+    ax2.set_title("K-means Clustering on Phasors")
+    ax2.set_xlabel("G Value")
+    ax2.set_ylabel("S Value")
+    fig2.show()
 
     return export_df
 
-def user_grouping():
-    directory = 'Microbeads'
+def user_grouping(df, dir, mode=0):
+    # input a dataframe to automatically determine hard limits based on S
+    # no input dataframe means the user needs to hard code a value
 
-    # init list of object phasors
-    phasor_list = []
+    if mode == 0:
+        directory = dir
 
-    # Iterate files in directory
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
+        # init list of object phasors
+        phasor_list = []
 
-        # checking if it is a file
-        if os.path.isfile(f):
-            image=cv.imread(filename=f)
-            image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
-            image = cv.medianBlur(image, 5)
+        # Iterate files in directory
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
 
-            objects = watershed_object(image)
+            # checking if it is a file
+            if os.path.isfile(f):
+                image=cv.imread(filename=f)
+                image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
+                image = cv.medianBlur(image, 5)
 
-            for obj in objects:
-                # G and S are 2D Arrays of shape (image dim, 3)
-                G, S, Ph, Mod, I = phasors(obj, axis=2)
-                temp = ObjectPhasor(G, S, obj)
-                phasor_list.append(temp)
+                objects = watershed_object(image)
 
-    data = []
-    
-    for i in range(len(phasor_list)):
-        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i]
-        data.append(temp)
-    export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum']) 
+                for obj in objects:
+                    # G and S are 2D Arrays of shape (image dim, 3)
+                    G, S, Ph, Mod, I = phasors(obj, axis=2)
+                    temp = ObjectPhasor(G, S, obj)
+                    phasor_list.append(temp)
 
-    export_df['Labels'] = export_df.apply(lambda x: 1 if statistics.median([i for i in x['S'].flatten() if i != 0]) <= -0.2 else 0, axis=1)
+        data = []
+
+        for i in range(len(phasor_list)):
+            temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i, phasor_list[i].get_img()]
+            data.append(temp)
+
+        export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum', 'ObjRef']) 
+
+        export_df['G'] = export_df.apply(lambda x: statistics.median([i for i in x['G'].flatten() if i != 0]), axis=1)
+        export_df['S'] = export_df.apply(lambda x: statistics.median([i for i in x['S'].flatten() if i != 0]), axis=1)
+
+        export_df['Labels'] = export_df.apply(lambda x: 1 if x['S'] >= -0.5 else 0, axis=1)
         
-    return export_df
+        return export_df
+    
+    else:
+        export_df = df[['G', 'S', 'ObjNum', 'ObjRef']]
+
+        medians = df.groupby('Labels')['S'].median()
+        stddev = df.groupby('Labels')['S'].std()
+
+        maxside = max(medians[0], medians[1])
+
+        if maxside == medians[0]:
+            top = medians[0] - stddev[0]
+            bottom = medians[1] + stddev[1]
+        else:
+            top = medians[0] + stddev[0]
+            bottom = medians[1] - stddev[1]
+        
+        limit = statistics.mean([top, bottom])
+
+        export_df['Labels'] = export_df.apply(lambda x: 1 if x['S'] >= limit else 0, axis=1)
+
+        return export_df
+
 
 def kmeans_colors(img, n):
     image = img
@@ -273,51 +311,53 @@ def color_computing(rgb_colors):
 
 def classify_phasors(df):
     # classify into color based on G and S arrays
-    df['G'] = df['G'].map(lambda x: x.flatten())
-    df['S'] = df['S'].map(lambda x: x.flatten())
-    
-    df['G'] = df['G'].map(lambda x: [i for i in x if i != 0])
-    df['S'] = df['S'].map(lambda x: [i for i in x if i != 0])
 
-    gmax = len(max(df.G, key=len))
-    smax = len(max(df.S, key=len))
-
-    df['G'] = df['G'].map(lambda x: np.pad(x, (0, (gmax - len(x)))))
-    df['S'] = df['S'].map(lambda x: np.pad(x, (0, (smax - len(x)))))
-
-    gcolnames = []
-    scolnames = []
-    for i in range(len(df['G'][0])):
-        temp = 'G' + f'{i}'
-        gcolnames.append(temp)
-    for i in range(len(df['S'][0])):
-        temp = 'S' + f'{i}'
-        scolnames.append(temp)
-
-    df[gcolnames] = pd.DataFrame(df.G.tolist(), index= df.index)
-    df[scolnames] = pd.DataFrame(df.S.tolist(), index= df.index)
-
-    X = df.drop(['Labels', 'G', 'S'], axis=1)
+    X = df.drop(['Labels', 'ObjRef'], axis=1)
     y = df['Labels']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
-
-    rf = RandomForestClassifier()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    
+    rf = RandomForestClassifier(n_estimators=250, max_depth=5, random_state=42)
     rf.fit(X_train, y_train)
+
+    y_pred_prob = rf.predict_proba(X_test)[:, 1] 
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob, pos_label=1)
+    
+    # Compute the ROC AUC score 
+    roc_auc = roc_auc_score(y_test, y_pred_prob) 
+        
+    # Plot the ROC curve 
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc) 
+    # roc curve for tpr = fpr  
+    plt.plot([0, 1], [0, 1], 'k--', label='Random classifier') 
+    plt.xlabel('False Positive Rate') 
+    plt.ylabel('True Positive Rate') 
+    plt.title('ROC Curve') 
+    plt.legend(loc="lower right") 
+    plt.show()
 
     y_pred = rf.predict(X_test)
 
+    # Create the confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+
+    ConfusionMatrixDisplay(confusion_matrix=cm).plot();
+    
     accuracy = accuracy_score(y_test, y_pred)
     print("Accuracy:", accuracy)
+    # View the classification report for test data and predictions
+    print(classification_report(y_test, y_pred))
 
-    return y_pred
+    return rf
 
 def test_accuracy(kmeans_df, user_df):
     kmeans_dict = kmeans_df['Labels'].to_dict()
     user_dict = user_df['Labels'].to_dict()
     accuracy = []
     
+    user_labels = []
     for key in kmeans_dict:
+        user_labels.append(user_dict[key])
         if kmeans_dict[key] == user_dict[key]:
             accuracy.append(1)
         else:
@@ -325,35 +365,23 @@ def test_accuracy(kmeans_df, user_df):
     
     score = sum(accuracy) / len(kmeans_dict) * 100
 
+    # in the case that the 0 and 1 labels are switched
+    if score < 50:
+        score = 100 - score
+
+    print(score)
+    # Create the confusion matrix
+    cm = confusion_matrix(np.array(user_labels), np.array(kmeans_df['Labels']))
+
+    ConfusionMatrixDisplay(confusion_matrix=cm).plot()
+    
     return score
     
-# classification loop
-# this assume that the previous clustering based on g and s is correct
 def main():
-    df = kmeans_points()
-    # df g and s come in a list, if can split those into columns and create dummies, can random forest classify
-
-    # df = df.apply(lambda x: x['G'].flatten(), axis=1)
-    # print(df['S'])
-    # for col in df.columns:
-    #     print(col)
-    # G_columns = len(df['G'][0])
-    # S_columns = len(df['S'][0])
-    # print(G_columns)
-    # print(S_columns)
-    # G_col = []
-    # S_col = []
-
-    # for i in range(G_columns):
-    #     G_col.append(f"G{i}")
-
-    # for i in range(S_columns):
-    #     S_col.append(f"S{i}")
-
-    # df[G_col] = pd.DataFrame(df.G.tolist(), index= df.index)
-    # df[S_col] = pd.DataFrame(df.S.tolist(), index= df.index)
-
-    # print(df)
+    df = kmeans_points('MB231')
+    user_df = user_grouping(df,'MB231', mode=1)
+    score = test_accuracy(df, user_df)
+    pred = classify_phasors(df)
 
 if __name__ == '__main__':
     main()
