@@ -59,6 +59,14 @@ def background_subtraction(src):
     shifted = cv.pyrMeanShiftFiltering(src, 21, 51)
     return shifted 
 
+def isolate(img, low, high):
+    img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+    mask = cv.inRange(img, low, high)
+    isolate = cv.bitwise_and(img, img, mask=mask)
+    mask = background_subtraction(isolate)
+    img = cv.cvtColor(isolate, cv.COLOR_HSV2BGR)
+    return img
+
 def watershed_object(image):
     # perform watershed on image and return individual objects in a list
 
@@ -68,7 +76,7 @@ def watershed_object(image):
     Mgray=gray*(gray>40)
 
     distance = ndi.distance_transform_edt(Mgray)
-    coords = peak_local_max(distance, min_distance=8)
+    coords = peak_local_max(distance, min_distance=16)
     mask = np.zeros(distance.shape, dtype=bool)
     mask[tuple(coords.T)] = True
     markers, _ = ndi.label(mask)
@@ -85,7 +93,7 @@ def watershed_object(image):
 
         cv.imshow(f'Object #{label}', masked)
         # waitKey() waits for a key press to close the window and 0 specifies indefinite loop
-        cv.waitKey(240)
+        cv.waitKey(500)
         cv.destroyAllWindows()
 
         list_masks.append(masked)
@@ -115,6 +123,7 @@ def kmeans_points(dir):
         # checking if it is a file
         if os.path.isfile(f):
             image=cv.imread(filename=f)
+            image = isolate(image, low=np.array([0,0,70]), high=np.array([179,255,255]))
             image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
             image = cv.medianBlur(image, 5)
 
@@ -371,9 +380,9 @@ def test_accuracy(kmeans_df, user_df):
 
     print(score)
     # Create the confusion matrix
-    cm = confusion_matrix(np.array(user_labels), np.array(kmeans_df['Labels']))
+    # cm2 = confusion_matrix(np.array(user_labels), np.array(kmeans_df['Labels']))
 
-    ConfusionMatrixDisplay(confusion_matrix=cm).plot()
+    # ConfusionMatrixDisplay(confusion_matrix=cm2).plot()
     
     return score
     
