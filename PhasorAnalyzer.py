@@ -20,17 +20,21 @@ from sklearn.model_selection import RandomizedSearchCV, train_test_split
 import random
 
 class ObjectPhasor:
-    def __init__(self, G, S, img):
+    def __init__(self, G, S, Ph, img):
         # G and S are both arrays
         self.img = img
         self.G = G
         self.S = S
+        self.Ph = Ph
 
     def get_g(self):
         return self.G
     
     def get_s(self):
         return self.S
+    
+    def get_ph(self):
+        return self.Ph
     
 def phasors(img, axis):
     fft=np.fft.fft(img, axis=axis)
@@ -91,10 +95,10 @@ def watershed_object(image):
  
         masked = cv.bitwise_and(image, image, mask=mask)
 
-        cv.imshow(f'Object #{label}', masked)
-        # waitKey() waits for a key press to close the window and 0 specifies indefinite loop
-        cv.waitKey(500)
-        cv.destroyAllWindows()
+        # cv.imshow(f'Object #{label}', masked)
+        # # waitKey() waits for a key press to close the window and 0 specifies indefinite loop
+        # cv.waitKey(25)
+        # cv.destroyAllWindows()
 
         list_masks.append(masked)
     
@@ -132,19 +136,20 @@ def kmeans_points(dir):
             for obj in objects:
                 # G and S are 2D Arrays of shape (image dim, 3)
                 G, S, Ph, Mod, I = phasors(obj, axis=2)
-                temp = ObjectPhasor(G, S, obj)
+                temp = ObjectPhasor(G, S, Ph, obj)
                 phasor_list.append(temp)
     
     data = []
     for i in range(len(phasor_list)):
-        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i, phasor_list[i]]
+        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), phasor_list[i].get_ph(), i, phasor_list[i]]
         data.append(temp)
         
-    export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum', 'ObjRef'])
+    export_df = pd.DataFrame(data, columns = ['G', 'S', 'Ph', 'ObjNum', 'ObjRef'])
 
     # Instead of having all the phasors as a list to plot, we combine to have just one point - the medians of G and S, which helps limit outliers
     export_df['G'] = export_df.apply(lambda x: statistics.median([i for i in x['G'].flatten() if i != 0]), axis=1)
     export_df['S'] = export_df.apply(lambda x: statistics.median([i for i in x['S'].flatten() if i != 0]), axis=1)
+    export_df['Ph'] = export_df.apply(lambda x: statistics.median([i for i in x['Ph'].flatten() if i != 0]), axis=1)
 
     # Flatten all the X, Y, Z and make them into array shape (dim, 3)
     X = export_df['G'].to_list()
@@ -168,32 +173,31 @@ def kmeans_points(dir):
          .drop_duplicates('Z'))
 
     export_df = export_df.join(df, how='inner',lsuffix='ObjNum', rsuffix='Z')
-    export_df = export_df[['G', 'S', 'ObjNum', 'Labels', 'ObjRef']]
+    export_df = export_df[['G', 'S', 'Ph', 'ObjNum', 'Labels', 'ObjRef']]
 
     # Plot the data points and their cluster assignments
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(dataset[:, 0], dataset[:, 1], dataset[:, 2], c=labels, cmap='viridis')
 
-    # Set light blue background 
-    ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
-    ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
-    ax.set_title("K-means Clustering on Phasors")
-    ax.set_xlabel("G Value")
-    ax.set_ylabel("S Value")
-    ax.set_zlabel("Object Number")
-    fig.show()
+    # # Set light blue background 
+    # ax.xaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    # ax.yaxis.set_pane_color((0.8, 0.8, 1.0, 1.0)) 
+    # ax.zaxis.set_pane_color((0.8, 0.8, 1.0, 1.0))
+    # ax.set_title("K-means Clustering on Phasors")
+    # ax.set_xlabel("G Value")
+    # ax.set_ylabel("S Value")
+    # ax.set_zlabel("Object Number")
+    # fig.show()
 
     fig2 = plt.figure()
-    ax2 = fig.add_subplot(111)
+    ax2 = fig2.add_subplot(111)
     ax2.scatter(dataset[:, 0], dataset[:, 1], c=labels, cmap='viridis')
     # Set light blue background 
     ax2.set_title("K-means Clustering on Phasors")
     ax2.set_xlabel("G Value")
     ax2.set_ylabel("S Value")
-    fig2.show()
 
     return export_df
 
@@ -222,26 +226,30 @@ def user_grouping(df, dir, mode=0):
                 for obj in objects:
                     # G and S are 2D Arrays of shape (image dim, 3)
                     G, S, Ph, Mod, I = phasors(obj, axis=2)
-                    temp = ObjectPhasor(G, S, obj)
+                    temp = ObjectPhasor(G, S, Ph, obj)
                     phasor_list.append(temp)
 
         data = []
 
         for i in range(len(phasor_list)):
-            temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), i, phasor_list[i].get_img()]
+            temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), phasor_list[i].get_ph(), i, phasor_list[i].get_img()]
             data.append(temp)
 
-        export_df = pd.DataFrame(data, columns = ['G', 'S', 'ObjNum', 'ObjRef']) 
+        export_df = pd.DataFrame(data, columns = ['G', 'S', 'Ph', 'ObjNum', 'ObjRef']) 
 
         export_df['G'] = export_df.apply(lambda x: statistics.median([i for i in x['G'].flatten() if i != 0]), axis=1)
         export_df['S'] = export_df.apply(lambda x: statistics.median([i for i in x['S'].flatten() if i != 0]), axis=1)
+        export_df['Ph'] = export_df.apply(lambda x: statistics.median([i for i in x['Ph'].flatten() if i != 0]), axis=1)
 
+        # Pick one: threshold on S or G or phase
+        # Thresholding on phase is probably the best though
         export_df['Labels'] = export_df.apply(lambda x: 1 if x['S'] >= -0.5 else 0, axis=1)
+        # export_df['Labels'] = export_df.apply(lambda x: 1 if x['S'] >= -0.5 else 0, axis=1)
         
         return export_df
     
     else:
-        export_df = df[['G', 'S', 'ObjNum', 'ObjRef']]
+        export_df = df[['G', 'S', 'Ph', 'ObjNum', 'ObjRef']]
 
         medians = df.groupby('Labels')['S'].median()
         stddev = df.groupby('Labels')['S'].std()
@@ -257,6 +265,9 @@ def user_grouping(df, dir, mode=0):
         
         limit = statistics.mean([top, bottom])
 
+        # Pick one: threshold on S or G or phase, have to change above medians to match whatever picked
+        # Thresholding on phase is probably the best though
+        # export_df['Labels'] = export_df.apply(lambda x: 1 if x['Ph'] >= limit else 0, axis=1)
         export_df['Labels'] = export_df.apply(lambda x: 1 if x['S'] >= limit else 0, axis=1)
 
         return export_df
@@ -336,14 +347,23 @@ def classify_phasors(df):
     roc_auc = roc_auc_score(y_test, y_pred_prob) 
         
     # Plot the ROC curve 
-    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc) 
-    # roc curve for tpr = fpr  
-    plt.plot([0, 1], [0, 1], 'k--', label='Random classifier') 
-    plt.xlabel('False Positive Rate') 
-    plt.ylabel('True Positive Rate') 
-    plt.title('ROC Curve') 
-    plt.legend(loc="lower right") 
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc) 
+    ax.set_title('ROC Curve')
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+    ax.legend(loc="lower right")
     plt.show()
+
+    # plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc) 
+    # # roc curve for tpr = fpr  
+    # plt.plot([0, 1], [0, 1], 'k--', label='Random classifier') 
+    # plt.xlabel('False Positive Rate') 
+    # plt.ylabel('True Positive Rate') 
+    # plt.title('ROC Curve') 
+    # plt.legend(loc="lower right") 
+    # plt.show()
 
     y_pred = rf.predict(X_test)
 
@@ -383,12 +403,11 @@ def test_accuracy(kmeans_df, user_df):
     # cm2 = confusion_matrix(np.array(user_labels), np.array(kmeans_df['Labels']))
 
     # ConfusionMatrixDisplay(confusion_matrix=cm2).plot()
-    
     return score
     
 def main():
-    df = kmeans_points('MB231')
-    user_df = user_grouping(df,'MB231', mode=1)
+    df = kmeans_points('Cells')
+    user_df = user_grouping(df,'Cells', mode=1)
     score = test_accuracy(df, user_df)
     pred = classify_phasors(df)
 
