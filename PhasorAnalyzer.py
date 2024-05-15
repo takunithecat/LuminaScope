@@ -190,15 +190,34 @@ def kmeans_points(dir):
     # ax.set_ylabel("S Value")
     # ax.set_zlabel("Object Number")
     # fig.show()
+    mb = export_df[(export_df['Labels'] == 0)]['S'].to_numpy()
+    mcf = export_df[(export_df['Labels'] == 1)]['S'].to_numpy()
 
-    fig2 = plt.figure()
-    ax2 = fig2.add_subplot(111)
+    fig, axs = plt.subplots(1, 2)
+    axs[0].boxplot(mb)
+    axs[0].set_title('MB231 Phasor Distribution')
+    axs[0].set_ylabel("S Value")
+    axs[0].set_xticklabels([''],
+                    rotation=45, fontsize=8)
+
+    axs[1].boxplot(mcf)
+    axs[1].set_title('MCF10a Phasor Distribution')
+    axs[1].set_xticklabels([''],
+                    rotation=45, fontsize=8)
+
+    fig, ax2 = plt.subplots()
     ax2.scatter(dataset[:, 0], dataset[:, 1], c=labels, cmap='viridis')
     # Set light blue background 
     ax2.set_title("K-means Clustering on Phasors")
     ax2.set_xlabel("G Value")
     ax2.set_ylabel("S Value")
 
+    xticks = ['MB231', 'MCF10a']
+    fig, ax = plt.subplots()
+    ax.boxplot([mb, mcf])
+    ax.set_title('Distribution of Phasor S Values')
+    ax.set_xticklabels(xticks,
+                    rotation=45, fontsize=8)
     return export_df
 
 def user_grouping(df, dir, mode=0):
