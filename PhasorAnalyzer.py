@@ -17,7 +17,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay, classification_report, roc_curve, roc_auc_score 
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
-import random
+import scipy
 
 class ObjectPhasor:
     def __init__(self, G, S, Ph, img):
@@ -537,7 +537,78 @@ def test_accuracy(kmeans_df, user_df):
 
     # ConfusionMatrixDisplay(confusion_matrix=cm2).plot()
     return score
-    
+
+def test_normality(df):
+    t_stats = []
+    p_values = []
+    variance = []
+
+    groups = df.groupby("Labels")
+
+    for name, group in groups:
+        Svals = df['S'].to_numpy()
+
+        if len(Svals) < 50:
+            tstat, pval = scipy.stats.shapiro(Svals)
+            t_stats.append(tstat)
+            p_values.append(pval)
+
+            var = np.var(Svals)
+            variance.append(var)
+
+        else:
+            tstat, pval = scipy.stats.kstest(Svals)
+            t_stats.append(tstat)
+            p_values.append(pval)
+
+            var = np.var(Svals)
+            variance.append(var)
+
+    return t_stats, p_values, variance
+
+def test_homogeneity(df, mode=0):
+    # mode 0 is normal data
+    # mode 1 is non normal data
+    # there should only be 2 tags in df
+    if mode == 0:
+        # assume normality, continuous, randomly sampled, similar variance
+        # two tailed
+        # two sample
+        # unpaired
+        groupnames = df.groupby("Labels").groups.keys()
+
+        df_A = groupnames[0]
+        df_B = groupnames[1]
+
+        df_A = df_A.sample(n = 30, random_state=42)
+        df_B = df_B.sample(n = 30, random_state=42)
+
+        a = df_A['S'].to_numpy()
+        b = df_B['S'].to_numpy()
+
+        stat, p , deg = scipy.stats.ttest_ind(a, b)
+
+    else:
+        # one independent and dependent variable
+        # independence of observations
+        # If distributions different shape, differences in distribution
+        # IF distributions same shape, differences in median
+        groupnames = df.groupby("Labels").groups.keys()
+
+        df_A = groupnames[0]
+        df_B = groupnames[1]
+
+        df_A = df_A.sample(n = 30, random_state=42)
+        df_B = df_B.sample(n = 30, random_state=42)
+
+        a = df_A['S'].to_numpy()
+        b = df_B['S'].to_numpy()
+
+        stat, p = scipy.stats.mannwhitneyu(a, b)
+        
+    return stat, p
+
+
 def main():
     df = manual_grouping('MB231', 'MCF10aSet3')
     # df = kmeans_points('Cells')
