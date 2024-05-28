@@ -18,6 +18,7 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay, classification_report, roc_curve, roc_auc_score 
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 import scipy
+from scipy import stats
 
 class ObjectPhasor:
     def __init__(self, G, S, Ph, img):
@@ -546,10 +547,11 @@ def test_normality(df):
     groups = df.groupby("Labels")
 
     for name, group in groups:
+        print(name)
         Svals = df['S'].to_numpy()
 
         if len(Svals) < 50:
-            tstat, pval = scipy.stats.shapiro(Svals)
+            tstat, pval = stats.shapiro(Svals)
             t_stats.append(tstat)
             p_values.append(pval)
 
@@ -557,7 +559,7 @@ def test_normality(df):
             variance.append(var)
 
         else:
-            tstat, pval = scipy.stats.kstest(Svals)
+            tstat, pval = stats.kstest(Svals, stats.norm.cdf)
             t_stats.append(tstat)
             p_values.append(pval)
 
@@ -575,10 +577,11 @@ def test_homogeneity(df, mode=0):
         # two tailed
         # two sample
         # unpaired
-        groupnames = df.groupby("Labels").groups.keys()
+        groupnames = df.groupby("Labels")  
+        groupnames = list(groupnames.groups.keys())
 
-        df_A = groupnames[0]
-        df_B = groupnames[1]
+        df_A = df[df['Labels'] == groupnames[0]]
+        df_B = df[df['Labels'] == groupnames[1]]
 
         df_A = df_A.sample(n = 30, random_state=42)
         df_B = df_B.sample(n = 30, random_state=42)
@@ -586,31 +589,56 @@ def test_homogeneity(df, mode=0):
         a = df_A['S'].to_numpy()
         b = df_B['S'].to_numpy()
 
-        stat, p , deg = scipy.stats.ttest_ind(a, b)
+        stat, p , deg = stats.ttest_ind(a, b)
 
     else:
         # one independent and dependent variable
         # independence of observations
         # If distributions different shape, differences in distribution
         # IF distributions same shape, differences in median
-        groupnames = df.groupby("Labels").groups.keys()
+        groupnames = df.groupby("Labels")  
+        groupnames = list(groupnames.groups.keys())
 
-        df_A = groupnames[0]
-        df_B = groupnames[1]
+        df_A = df[df['Labels'] == groupnames[0]]
+        df_B = df[df['Labels'] == groupnames[1]]
 
-        df_A = df_A.sample(n = 30, random_state=42)
-        df_B = df_B.sample(n = 30, random_state=42)
+        df_A = df_A.sample(n = 40, random_state=42)
+        df_B = df_B.sample(n = 40, random_state=42)
 
         a = df_A['S'].to_numpy()
         b = df_B['S'].to_numpy()
 
-        stat, p = scipy.stats.mannwhitneyu(a, b)
+        stat, p = stats.mannwhitneyu(a, b)
         
     return stat, p
+
+def make_histograms(df):
+    groupnames = df.groupby("Labels")  
+    groupnames = list(groupnames.groups.keys())
+
+    df_A = df[df['Labels'] == groupnames[0]]['S'].to_numpy()
+    df_B = df[df['Labels'] == groupnames[1]]['S'].to_numpy()
+
+    bins = np.linspace(0, 0.5, 50)
+
+    plt.hist(df_A, bins, alpha=0.5, label=f'{groupnames[0]}')
+    plt.hist(df_B, bins, alpha=0.5, label=f'{groupnames[1]}')
+    plt.title('Distribution of S Phasors for Cell Samples')
+    plt.xlabel('Phasor Value')
+    plt.legend(loc='upper right')
+    plt.show()
 
 
 def main():
     df = manual_grouping('MB231', 'MCF10aSet3')
+    t_stats, p_values, variance = test_normality(df)
+    print(t_stats)
+    print(p_values)
+    print(variance)
+    t_stat, p = test_homogeneity(df, 1)
+    print(t_stat)
+    print(p)
+    make_histograms(df)
     # df = kmeans_points('Cells')
     # user_df = user_grouping(df,'Cells', mode=1)
     # score = test_accuracy(df, user_df)
