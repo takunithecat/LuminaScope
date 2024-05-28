@@ -291,6 +291,120 @@ def user_grouping(df, dir, mode=0):
 
         return export_df
 
+def manual_grouping(dir1, dir2):
+    # dir1 and dir2 should both be strings
+    directory1 = dir1
+    directory2 = dir2
+
+    # init list of object phasors
+    phasor_list = []
+
+    # Iterate files in directory
+    for filename in os.listdir(directory1):
+        f = os.path.join(directory1, filename)
+
+        # checking if it is a file
+        if os.path.isfile(f):
+            image=cv.imread(filename=f)
+            image = isolate(image, low=np.array([0,0,70]), high=np.array([179,255,255]))
+            image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
+            image = cv.medianBlur(image, 5)
+
+            objects = watershed_object(image)
+
+            for obj in objects:
+                # G and S are 2D Arrays of shape (image dim, 3)
+                G, S, Ph, Mod, I = phasors(obj, axis=2)
+                temp = ObjectPhasor(G, S, Ph, obj)
+                phasor_list.append(temp)
+    
+    data = []
+
+    for i in range(len(phasor_list)):
+        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), phasor_list[i].get_ph(), i, phasor_list[i], directory1]
+        data.append(temp)
+        
+    export_df1 = pd.DataFrame(data, columns = ['G', 'S', 'Ph', 'ObjNum', 'ObjRef', 'Labels'])
+
+    # second pass for second dir
+    # init list of object phasors
+    phasor_list = []
+
+    # Iterate files in directory
+    for filename in os.listdir(directory2):
+        f = os.path.join(directory2, filename)
+
+        # checking if it is a file
+        if os.path.isfile(f):
+            image=cv.imread(filename=f)
+            image = isolate(image, low=np.array([0,0,70]), high=np.array([179,255,255]))
+            image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
+            image = cv.medianBlur(image, 5)
+
+            objects = watershed_object(image)
+
+            for obj in objects:
+                # G and S are 2D Arrays of shape (image dim, 3)
+                G, S, Ph, Mod, I = phasors(obj, axis=2)
+                temp = ObjectPhasor(G, S, Ph, obj)
+                phasor_list.append(temp)
+    
+    data = []
+    
+    for i in range(len(phasor_list)):
+        temp = [phasor_list[i].get_g(), phasor_list[i].get_s(), phasor_list[i].get_ph(), i, phasor_list[i], directory2]
+        data.append(temp)
+        
+    export_df2 = pd.DataFrame(data, columns = ['G', 'S', 'Ph', 'ObjNum', 'ObjRef', 'Labels'])
+
+    export_df = pd.concat([export_df1, export_df2], ignore_index=True)
+
+    # Instead of having all the phasors as a list to plot, we combine to have just one point - the medians of G and S, which helps limit outliers
+    export_df['G'] = export_df.apply(lambda x: statistics.median([i for i in x['G'].flatten() if i != 0]), axis=1)
+    export_df['S'] = export_df.apply(lambda x: statistics.median([i for i in x['S'].flatten() if i != 0]), axis=1)
+    export_df['Ph'] = export_df.apply(lambda x: statistics.median([i for i in x['Ph'].flatten() if i != 0]), axis=1)
+
+    export_df = export_df[['G', 'S', 'Ph', 'ObjNum', 'Labels', 'ObjRef']]
+
+    mb = export_df[(export_df['Labels'] == directory1)]['S'].to_numpy()
+    mcf = export_df[(export_df['Labels'] == directory2)]['S'].to_numpy()
+    labels = export_df['Labels'].tolist()
+
+    for n in range (len(labels)):
+        if labels[n] == directory1:
+            labels[n] = 0
+        else:
+            labels[n] = 1
+
+    fig, axs = plt.subplots(1, 2)
+    axs[0].boxplot(mb)
+    axs[0].set_title(f'{directory1} Phasor Distribution')
+    axs[0].set_ylabel("S Value")
+    axs[0].set_xticklabels([''],
+                    rotation=45, fontsize=8)
+
+    axs[1].boxplot(mcf)
+    axs[1].set_title(f'{directory2} Phasor Distribution')
+    axs[1].set_xticklabels([''],
+                    rotation=45, fontsize=8)
+
+    fig, ax2 = plt.subplots()
+    ax2.scatter(export_df['G'], export_df['S'], c=labels, cmap='viridis')
+    # Set light blue background 
+    ax2.set_title("K-means Clustering on Phasors")
+    ax2.set_xlabel("G Value")
+    ax2.set_ylabel("S Value")
+
+    xticks = [f'{directory1}', f'{directory2}']
+    fig, ax = plt.subplots()
+    ax.boxplot([mb, mcf])
+    ax.set_title('Distribution of Phasor S Values')
+    ax.set_xticklabels(xticks,
+                    rotation=45, fontsize=8)
+    
+    plt.show()
+
+    return export_df
 
 def kmeans_colors(img, n):
     image = img
@@ -389,7 +503,7 @@ def classify_phasors(df):
     # Create the confusion matrix
     cm = confusion_matrix(y_test, y_pred)
 
-    ConfusionMatrixDisplay(confusion_matrix=cm).plot();
+    ConfusionMatrixDisplay(confusion_matrix=cm).plot()
     
     accuracy = accuracy_score(y_test, y_pred)
     print("Accuracy:", accuracy)
@@ -425,10 +539,11 @@ def test_accuracy(kmeans_df, user_df):
     return score
     
 def main():
-    df = kmeans_points('Cells')
-    user_df = user_grouping(df,'Cells', mode=1)
-    score = test_accuracy(df, user_df)
-    pred = classify_phasors(df)
+    df = manual_grouping('MB231', 'MCF10aSet3')
+    # df = kmeans_points('Cells')
+    # user_df = user_grouping(df,'Cells', mode=1)
+    # score = test_accuracy(df, user_df)
+    # pred = classify_phasors(df)
 
 if __name__ == '__main__':
     main()
