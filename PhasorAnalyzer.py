@@ -98,7 +98,7 @@ def watershed_object(image):
 
         # cv.imshow(f'Object #{label}', masked)
         # # waitKey() waits for a key press to close the window and 0 specifies indefinite loop
-        # cv.waitKey(25)
+        # cv.waitKey(500)
         # cv.destroyAllWindows()
 
         list_masks.append(masked)
@@ -149,6 +149,8 @@ def kmeans_points(dir):
 
     # Instead of having all the phasors as a list to plot, we combine to have just one point - the medians of G and S, which helps limit outliers
     export_df['G'] = export_df.apply(lambda x: statistics.median([i for i in x['G'].flatten() if i != 0]), axis=1)
+    export_df['S_IQR'] = export_df.apply(lambda x: stats.iqr([i for i in x['S'].flatten() if i != 0]), axis=1)
+    export_df['S_MAD'] = export_df.apply(lambda x: stats.median_abs_deviation([i for i in x['S'].flatten() if i != 0]), axis=1)
     export_df['S'] = export_df.apply(lambda x: statistics.median([i for i in x['S'].flatten() if i != 0]), axis=1)
     export_df['Ph'] = export_df.apply(lambda x: statistics.median([i for i in x['Ph'].flatten() if i != 0]), axis=1)
 
@@ -174,7 +176,7 @@ def kmeans_points(dir):
          .drop_duplicates('Z'))
 
     export_df = export_df.join(df, how='inner',lsuffix='ObjNum', rsuffix='Z')
-    export_df = export_df[['G', 'S', 'Ph', 'ObjNum', 'Labels', 'ObjRef']]
+    export_df = export_df[['G', 'S', 'S_IQR', 'S_MAD', 'Ph', 'ObjNum', 'Labels', 'ObjRef']]
 
     # Plot the data points and their cluster assignments
 
@@ -257,9 +259,14 @@ def user_grouping(df, dir, mode=0):
 
         export_df = pd.DataFrame(data, columns = ['G', 'S', 'Ph', 'ObjNum', 'ObjRef']) 
 
+        # Instead of having all the phasors as a list to plot, we combine to have just one point - the medians of G and S, which helps limit outliers
         export_df['G'] = export_df.apply(lambda x: statistics.median([i for i in x['G'].flatten() if i != 0]), axis=1)
+        export_df['S_IQR'] = export_df.apply(lambda x: stats.iqr([i for i in x['S'].flatten() if i != 0]), axis=1)
+        export_df['S_MAD'] = export_df.apply(lambda x: stats.median_abs_deviation([i for i in x['S'].flatten() if i != 0]), axis=1)
         export_df['S'] = export_df.apply(lambda x: statistics.median([i for i in x['S'].flatten() if i != 0]), axis=1)
         export_df['Ph'] = export_df.apply(lambda x: statistics.median([i for i in x['Ph'].flatten() if i != 0]), axis=1)
+
+        export_df = export_df[['G', 'S', 'S_IQR', 'S_MAD', 'Ph', 'ObjNum', 'Labels', 'ObjRef']]
 
         # Pick one: threshold on S or G or phase
         # Thresholding on phase is probably the best though
@@ -269,7 +276,7 @@ def user_grouping(df, dir, mode=0):
         return export_df
     
     else:
-        export_df = df[['G', 'S', 'Ph', 'ObjNum', 'ObjRef']]
+        export_df = df[['G', 'S', 'S_IQR', 'S_MAD', 'Ph', 'ObjNum', 'ObjRef']]
 
         medians = df.groupby('Labels')['S'].median()
         stddev = df.groupby('Labels')['S'].std()
@@ -362,10 +369,12 @@ def manual_grouping(dir1, dir2):
 
     # Instead of having all the phasors as a list to plot, we combine to have just one point - the medians of G and S, which helps limit outliers
     export_df['G'] = export_df.apply(lambda x: statistics.median([i for i in x['G'].flatten() if i != 0]), axis=1)
+    export_df['S_IQR'] = export_df.apply(lambda x: stats.iqr([i for i in x['S'].flatten() if i != 0]), axis=1)
+    export_df['S_MAD'] = export_df.apply(lambda x: stats.median_abs_deviation([i for i in x['S'].flatten() if i != 0]), axis=1)
     export_df['S'] = export_df.apply(lambda x: statistics.median([i for i in x['S'].flatten() if i != 0]), axis=1)
     export_df['Ph'] = export_df.apply(lambda x: statistics.median([i for i in x['Ph'].flatten() if i != 0]), axis=1)
 
-    export_df = export_df[['G', 'S', 'Ph', 'ObjNum', 'Labels', 'ObjRef']]
+    export_df = export_df[['G', 'S', 'S_IQR', 'S_MAD', 'Ph', 'ObjNum', 'Labels', 'ObjRef']]
 
     mb = export_df[(export_df['Labels'] == directory1)]['S'].to_numpy()
     mcf = export_df[(export_df['Labels'] == directory2)]['S'].to_numpy()
@@ -377,33 +386,33 @@ def manual_grouping(dir1, dir2):
         else:
             labels[n] = 1
 
-    fig, axs = plt.subplots(1, 2)
-    axs[0].boxplot(mb)
-    axs[0].set_title(f'{directory1} Phasor Distribution')
-    axs[0].set_ylabel("S Value")
-    axs[0].set_xticklabels([''],
-                    rotation=45, fontsize=8)
+    # fig, axs = plt.subplots(1, 2)
+    # axs[0].boxplot(mb)
+    # axs[0].set_title(f'{directory1} Phasor Distribution')
+    # axs[0].set_ylabel("S Value")
+    # axs[0].set_xticklabels([''],
+    #                 rotation=45, fontsize=8)
 
-    axs[1].boxplot(mcf)
-    axs[1].set_title(f'{directory2} Phasor Distribution')
-    axs[1].set_xticklabels([''],
-                    rotation=45, fontsize=8)
+    # axs[1].boxplot(mcf)
+    # axs[1].set_title(f'{directory2} Phasor Distribution')
+    # axs[1].set_xticklabels([''],
+    #                 rotation=45, fontsize=8)
 
-    fig, ax2 = plt.subplots()
-    ax2.scatter(export_df['G'], export_df['S'], c=labels, cmap='viridis')
-    # Set light blue background 
-    ax2.set_title("K-means Clustering on Phasors")
-    ax2.set_xlabel("G Value")
-    ax2.set_ylabel("S Value")
+    # fig, ax2 = plt.subplots()
+    # ax2.scatter(export_df['G'], export_df['S'], c=labels, cmap='viridis')
+    # # Set light blue background 
+    # ax2.set_title("K-means Clustering on Phasors")
+    # ax2.set_xlabel("G Value")
+    # ax2.set_ylabel("S Value")
 
-    xticks = [f'{directory1}', f'{directory2}']
-    fig, ax = plt.subplots()
-    ax.boxplot([mb, mcf])
-    ax.set_title('Distribution of Phasor S Values')
-    ax.set_xticklabels(xticks,
-                    rotation=45, fontsize=8)
+    # xticks = [f'{directory1}', f'{directory2}']
+    # fig, ax = plt.subplots()
+    # ax.boxplot([mb, mcf])
+    # ax.set_title('Distribution of Phasor S Values')
+    # ax.set_xticklabels(xticks,
+    #                 rotation=45, fontsize=8)
     
-    plt.show()
+    # plt.show()
 
     return export_df
 
@@ -466,29 +475,32 @@ def color_computing(rgb_colors):
 def classify_phasors(df):
     # classify into color based on G and S arrays
 
-    X = df.drop(['Labels', 'ObjRef'], axis=1)
+    X = df.drop(['Labels', 'ObjNum', 'ObjRef'], axis=1)
     y = df['Labels']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     
     rf = RandomForestClassifier(n_estimators=250, max_depth=5, random_state=42)
     rf.fit(X_train, y_train)
 
-    y_pred_prob = rf.predict_proba(X_test)[:, 1] 
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob, pos_label=1)
+    feature_scores = pd.Series(rf.feature_importances_, index=X_train.columns).sort_values(ascending=False)
+    print(feature_scores)
+
+    # y_pred_prob = rf.predict_proba(X_test)[:, 1] 
+    # fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob, pos_label=1)
     
-    # Compute the ROC AUC score 
-    roc_auc = roc_auc_score(y_test, y_pred_prob) 
+    # # Compute the ROC AUC score 
+    # roc_auc = roc_auc_score(y_test, y_pred_prob) 
         
-    # Plot the ROC curve 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc) 
-    ax.set_title('ROC Curve')
-    ax.set_xlabel('False Positive Rate')
-    ax.set_ylabel('True Positive Rate')
-    ax.legend(loc="lower right")
-    plt.show()
+    # # Plot the ROC curve 
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc) 
+    # ax.set_title('ROC Curve')
+    # ax.set_xlabel('False Positive Rate')
+    # ax.set_ylabel('True Positive Rate')
+    # ax.legend(loc="lower right")
+    # plt.show()
 
     # plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc) 
     # # roc curve for tpr = fpr  
@@ -548,7 +560,7 @@ def test_normality(df):
 
     for name, group in groups:
         print(name)
-        Svals = df['S'].to_numpy()
+        Svals = group['S'].to_numpy()
 
         if len(Svals) < 50:
             tstat, pval = stats.shapiro(Svals)
@@ -630,7 +642,7 @@ def make_histograms(df):
 
 
 def main():
-    df = manual_grouping('MB231', 'MCF10aSet3')
+    df = manual_grouping('MB231', 'MCF10aSet5')
     t_stats, p_values, variance = test_normality(df)
     print(t_stats)
     print(p_values)
@@ -639,10 +651,7 @@ def main():
     print(t_stat)
     print(p)
     make_histograms(df)
-    # df = kmeans_points('Cells')
-    # user_df = user_grouping(df,'Cells', mode=1)
-    # score = test_accuracy(df, user_df)
-    # pred = classify_phasors(df)
+    pred = classify_phasors(df)
 
 if __name__ == '__main__':
     main()
