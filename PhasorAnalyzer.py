@@ -386,33 +386,33 @@ def manual_grouping(dir1, dir2):
         else:
             labels[n] = 1
 
-    # fig, axs = plt.subplots(1, 2)
-    # axs[0].boxplot(mb)
-    # axs[0].set_title(f'{directory1} Phasor Distribution')
-    # axs[0].set_ylabel("S Value")
-    # axs[0].set_xticklabels([''],
-    #                 rotation=45, fontsize=8)
+    fig, axs = plt.subplots(1, 2)
+    axs[0].boxplot(mb)
+    axs[0].set_title(f'{directory1} Phasor Distribution')
+    axs[0].set_ylabel("S Value")
+    axs[0].set_xticklabels([''],
+                    rotation=45, fontsize=8)
 
-    # axs[1].boxplot(mcf)
-    # axs[1].set_title(f'{directory2} Phasor Distribution')
-    # axs[1].set_xticklabels([''],
-    #                 rotation=45, fontsize=8)
+    axs[1].boxplot(mcf)
+    axs[1].set_title(f'{directory2} Phasor Distribution')
+    axs[1].set_xticklabels([''],
+                    rotation=45, fontsize=8)
 
-    # fig, ax2 = plt.subplots()
-    # ax2.scatter(export_df['G'], export_df['S'], c=labels, cmap='viridis')
-    # # Set light blue background 
-    # ax2.set_title("K-means Clustering on Phasors")
-    # ax2.set_xlabel("G Value")
-    # ax2.set_ylabel("S Value")
+    fig, ax2 = plt.subplots()
+    ax2.scatter(export_df['G'], export_df['S'], c=labels, cmap='viridis')
+    # Set light blue background 
+    ax2.set_title("K-means Clustering on Phasors")
+    ax2.set_xlabel("G Value")
+    ax2.set_ylabel("S Value")
 
-    # xticks = [f'{directory1}', f'{directory2}']
-    # fig, ax = plt.subplots()
-    # ax.boxplot([mb, mcf])
-    # ax.set_title('Distribution of Phasor S Values')
-    # ax.set_xticklabels(xticks,
-    #                 rotation=45, fontsize=8)
+    xticks = [f'{directory1}', f'{directory2}']
+    fig, ax = plt.subplots()
+    ax.boxplot([mb, mcf])
+    ax.set_title('Distribution of Phasor S Values')
+    ax.set_xticklabels(xticks,
+                    rotation=45, fontsize=8)
     
-    # plt.show()
+    plt.show()
 
     return export_df
 
@@ -475,12 +475,12 @@ def color_computing(rgb_colors):
 def classify_phasors(df):
     # classify into color based on G and S arrays
 
-    X = df.drop(['Labels', 'ObjNum', 'ObjRef'], axis=1)
+    X = df.drop(['Labels', 'ObjNum', 'G', 'ObjRef'], axis=1)
     y = df['Labels']
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
     
-    rf = RandomForestClassifier(n_estimators=250, max_depth=5, random_state=42)
+    rf = RandomForestClassifier(n_estimators=250, random_state=42)
     rf.fit(X_train, y_train)
 
     feature_scores = pd.Series(rf.feature_importances_, index=X_train.columns).sort_values(ascending=False)
@@ -642,7 +642,7 @@ def make_histograms(df):
 
 
 def main():
-    df = manual_grouping('MB231', 'MCF10aSet5')
+    df = manual_grouping('MB231Set2', 'MCF10aSet5')
     t_stats, p_values, variance = test_normality(df)
     print(t_stats)
     print(p_values)
