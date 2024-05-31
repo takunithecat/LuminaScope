@@ -19,14 +19,20 @@ from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, r
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 import scipy
 from scipy import stats
+import joblib
+
 
 class ObjectPhasor:
-    def __init__(self, G, S, Ph, img):
+    def __init__(self, G, S, Ph, img, name=None):
         # G and S are both arrays
         self.img = img
         self.G = G
         self.S = S
         self.Ph = Ph
+        self.name=name
+
+    def get_img(self):
+        return self.img
 
     def get_g(self):
         return self.G
@@ -37,6 +43,9 @@ class ObjectPhasor:
     def get_ph(self):
         return self.Ph
     
+    def get_name(self):
+        return self.name
+
 def phasors(img, axis):
     fft=np.fft.fft(img, axis=axis)
     
@@ -71,6 +80,19 @@ def isolate(img, low, high):
     mask = background_subtraction(isolate)
     img = cv.cvtColor(isolate, cv.COLOR_HSV2BGR)
     return img
+
+def rescale_fixed(img):
+        # rescale image to a maximum size of 500x500
+        width = int(img.shape[1])
+        height = int(img.shape[0])
+
+        larger_dimension = max(width, height)
+
+        rescaled_width = int(width * (500 / larger_dimension))
+        rescaled_height = int(height * (500 / larger_dimension))
+
+        dimensions = (rescaled_width, rescaled_height)
+        return cv.resize(img, dimensions, interpolation=cv.INTER_AREA)
 
 def watershed_object(image):
     # perform watershed on image and return individual objects in a list
@@ -131,7 +153,7 @@ def kmeans_points(dir):
             image = isolate(image, low=np.array([0,0,70]), high=np.array([179,255,255]))
             image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
             image = cv.medianBlur(image, 5)
-
+            image = rescale_fixed(image)
             objects = watershed_object(image)
 
             for obj in objects:
@@ -242,7 +264,7 @@ def user_grouping(df, dir, mode=0):
                 image=cv.imread(filename=f)
                 image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
                 image = cv.medianBlur(image, 5)
-
+                image = rescale_fixed(image)
                 objects = watershed_object(image)
 
                 for obj in objects:
@@ -317,7 +339,7 @@ def manual_grouping(dir1, dir2):
             image = isolate(image, low=np.array([0,0,70]), high=np.array([179,255,255]))
             image=cv.cvtColor(image, cv.COLOR_BGR2RGB) 
             image = cv.medianBlur(image, 5)
-
+            image = rescale_fixed(image)
             objects = watershed_object(image)
 
             for obj in objects:
@@ -512,6 +534,7 @@ def classify_phasors(df):
     # plt.show()
 
     y_pred = rf.predict(X_test)
+    joblib.dump(rf, "CellPredictor.joblib")
 
     # Create the confusion matrix
     cm = confusion_matrix(y_test, y_pred)
