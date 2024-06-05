@@ -399,7 +399,9 @@ def manual_grouping(dir1, dir2):
     export_df = export_df[['G', 'S', 'S_IQR', 'S_MAD', 'Ph', 'ObjNum', 'Labels', 'ObjRef']]
 
     mb = export_df[(export_df['Labels'] == directory1)]['S'].to_numpy()
+    mb_g = export_df[(export_df['Labels'] == directory1)]['G'].to_numpy()
     mcf = export_df[(export_df['Labels'] == directory2)]['S'].to_numpy()
+    mcf_g = export_df[(export_df['Labels'] == directory2)]['G'].to_numpy()
     labels = export_df['Labels'].tolist()
 
     for n in range (len(labels)):
@@ -426,6 +428,7 @@ def manual_grouping(dir1, dir2):
     ax2.set_title("K-means Clustering on Phasors")
     ax2.set_xlabel("G Value")
     ax2.set_ylabel("S Value")
+    ax2.legend(loc="upper right")
 
     xticks = [f'{directory1}', f'{directory2}']
     fig, ax = plt.subplots()
@@ -433,8 +436,6 @@ def manual_grouping(dir1, dir2):
     ax.set_title('Distribution of Phasor S Values')
     ax.set_xticklabels(xticks,
                     rotation=45, fontsize=8)
-    
-    plt.show()
 
     return export_df
 
